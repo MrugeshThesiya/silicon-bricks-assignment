@@ -1,0 +1,7 @@
+transcripts/
+.assignment-key
+.assignment-brief.md
+.start_response*
+*.key
+node_modules/
+dist/

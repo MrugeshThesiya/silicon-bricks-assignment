@@ -1,0 +1,9 @@
+html, body, #root { height: 100%; margin: 0; font-family: system-ui, sans-serif; }
+.layout { display: grid; grid-template-columns: 300px 1fr; height: 100%; }
+.panel { padding: 16px; background: #fff; border-right: 1px solid #ddd; overflow: auto; }
+.panel h1 { font-size: 18px; margin: 0 0 12px; }
+.panel button { margin: 0 6px 8px 0; padding: 6px 10px; }
+.panel dl { display: grid; grid-template-columns: auto auto; gap: 4px 12px; }
+.panel dt { color: #666; }
+.panel dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+#map { height: 100%; }
