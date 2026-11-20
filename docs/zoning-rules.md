@@ -174,7 +174,7 @@ First version: show the base limit, and list the bonus routes as "not modelled".
 | ID | Assumption | Why | Effect if wrong |
 |---|---|---|---|
 | A-01 | The plot is an **empty field**. Redevelopment comes later. | Agreed with the candidate. The brief doesn't say. | Existing buildings on the plot are ignored. |
-| A-02 | Zone is **Y.6** until the district is chosen. | Middle of the three orange types. | FAR and OSR change (R-01, R-03). |
+| A-02 | Zone is **Y.7** for the chosen district (Huai Khwang / Ratchada, on a soi within 500 m of an MRT station). Y.6 is the fallback. | Y.7 is the orange type meant for areas served by mass transit (article 7 (2) (ค)). **The exact sub-area is not verified.** | FAR and OSR change (R-01 to R-03). Check the plot on the official BMA zoning map before relying on it. |
 | A-03 | Floor-to-floor height is **3.2 m** for housing. | Typical for condos. | Floor counts and the 23 m switch move. |
 | A-04 | **All floors count toward FAR**, including parking and basements. | Source A has no general exemption. This is the conservative reading. | Designs may show less floor area than the authority would allow. |
 | A-05 | The road width the user enters is the **right-of-way width** (boundary to boundary). | R-30 and R-20 use boundaries. OpenStreetMap only has road centre lines. | Heights and setbacks are off. We need a visible input and a default. |
@@ -188,7 +188,7 @@ First version: show the base limit, and list the bonus routes as "not modelled".
 
 ## 8. Open questions
 
-- ❓ Which district and sub-area, and how to check it on the zoning map. This sets the zone type for A-02.
+- ❓ The sub-area code at the chosen district, checked on the official BMA zoning map. Official data service: not found. The BMA open-data listing points to a map service on a bangkok.go.th host, but we could not reach its catalogue, so the check is manual (the "Check ผังเมือง กทม." app or the BMA map).
 - ❓ Parking count and any FAR exemption for parking and basements. Look for the Bangkok building bylaw (B.E. 2544) and MR No. 7.
 - ❓ How the 500 m to a station is measured, and which stations count (article 54 lists some by name; article 12 says "mass-transit station").
 - ❓ Whether the rooftop-structure paragraph added to MR 55 article 44 in 2020 changes how height is measured. The PDF text for it was damaged.
