@@ -15,9 +15,9 @@ import { edgesToFC, empty, floorsToFC, slicesToFC } from './mapData'
 // Basemap: OpenFreeMap (OpenStreetMap data). Its style supplies the
 // "© OpenStreetMap contributors" attribution, shown by the control below.
 const STYLE = 'https://tiles.openfreemap.org/styles/liberty'
-// Demo area: north-east side of Lat Phrao Road near Soi Lat Phrao 1 / Union Mall, about 470 m from MRT Phahon Yothin.
-// The 2013 plan map shows orange Y.7 here (docs/zoning-rules.md 2.3); OSM buildings are densely mapped on this side.
-const CENTER: [number, number] = [100.5655, 13.8112]
+// Demo area: Sukhumvit Road at BTS Bang Chak (Phra Khanong). Official 2013 plan map: orange Y.7-21; 95 % orange in a 500 m circle.
+// Chosen by the measured comparison in docs/area-ranking.md. The plot's own sub-area still needs the BMA parcel tool.
+const CENTER: [number, number] = [100.6063, 13.6982]
 
 const fmt = (n: number) => Math.round(n).toLocaleString('en-US')
 const ICON: Record<Check['status'], string> = { pass: '✓', fail: '✗', info: 'i' }
