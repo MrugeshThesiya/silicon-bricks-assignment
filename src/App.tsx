@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
 import { TerraDraw, TerraDrawPolygonMode, TerraDrawSelectMode } from 'terra-draw'
 import { TerraDrawMapLibreGLAdapter } from 'terra-draw-maplibre-gl-adapter'
@@ -6,6 +6,7 @@ import type { Polygon } from 'geojson'
 import { useApp } from './store'
 import type { Check, Input } from './engine'
 import { useCompute } from './useCompute'
+import { buildingIdsOnPlot, loadedBuildings, setHiddenBuildings } from './existingBuildings'
 import { ZONES, type ZoneId } from './rules/zones'
 import { empty, floorsToFC, roadEdgeToFC, slicesToFC } from './mapData'
 
@@ -22,7 +23,11 @@ export default function App() {
   const mapRef = useRef<maplibregl.Map | null>(null)
   const drawRef = useRef<TerraDraw | null>(null)
   const ready = useRef(false)
+  const [mapReady, setMapReady] = useState(false)
+  const [drawing, setDrawing] = useState(false)
   const s = useApp()
+  // The road width box keeps its own text while you type, so you can clear it and retype; it commits once the value is valid.
+  const [roadText, setRoadText] = useState(String(s.roadWidth))
   const input = useMemo<Input | null>(
     () => (s.plot ? { plot: s.plot, zone: s.zone, roadEdge: s.roadEdge, roadWidth: s.roadWidth, nearStation: s.nearStation } : null),
     [s.plot, s.zone, s.roadEdge, s.roadWidth, s.nearStation],
@@ -70,19 +75,29 @@ export default function App() {
       map.addLayer({ id: 'road-edge', source: 'road-edge', type: 'line', paint: { 'line-color': '#dc2626', 'line-width': 5 } })
       ready.current = true
       draw.start()
-      draw.on('finish', () => {
+      draw.on('finish', (id, context) => {
         sync()
-        draw.setMode('select')
+        // Only when a new polygon was just completed: switch to editing and keep it selected so its corners can be dragged.
+        // (A drag also ends with 'finish'; switching mode then would deselect the plot after every move.)
+        if (context.mode === 'polygon') {
+          draw.setMode('select')
+          draw.selectFeature(id)
+          setDrawing(false)
+        }
       })
       // While a new polygon is being drawn, every mouse move fires 'change'. Wait for 'finish'; Terra Draw shows the outline itself.
       draw.on('change', () => {
         if (draw.getMode() === 'select') sync()
       })
-      useApp.getState().set({}) // trigger first data push
+      setMapReady(true)
     })
     return () => {
       ready.current = false
-      draw.stop()
+      try {
+        draw.stop()
+      } catch {
+        /* never started: the map had not finished loading */
+      }
       map.remove()
     }
   }, [])
@@ -97,14 +112,46 @@ export default function App() {
   useEffect(() => put('design', result && design && s.showDesign ? floorsToFC(design.floors, result.frame) : empty), [result, design, s.showDesign])
   useEffect(() => put('road-edge', roadEdgeToFC(result)), [result])
 
+  // Hide the OSM buildings that stand on the plot (they are treated as demolished). Re-checked whenever the map goes idle,
+  // because more tiles may have loaded since.
+  const hidden = useRef('')
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+    let timer: number | undefined
+    const run = () => {
+      if (!ready.current) return
+      const ids = s.plot && !s.showExisting ? buildingIdsOnPlot(loadedBuildings(map), s.plot) : []
+      const key = ids.map(String).sort().join(',')
+      if (key === hidden.current) return
+      hidden.current = key
+      setHiddenBuildings(map, ids)
+    }
+    const later = () => {
+      window.clearTimeout(timer)
+      timer = window.setTimeout(run, 150)
+    }
+    later()
+    map.on('idle', later)
+    return () => {
+      window.clearTimeout(timer)
+      map.off('idle', later)
+    }
+  }, [s.plot, s.showExisting])
+
   const startDrawing = () => {
+    if (!ready.current) return
     drawRef.current?.clear()
     useApp.getState().set({ plot: null, roadEdge: null })
     drawRef.current?.setMode('polygon')
+    setDrawing(true)
   }
   const clear = () => {
+    if (!ready.current) return
     drawRef.current?.clear()
+    drawRef.current?.setMode('select')
     useApp.getState().set({ plot: null, roadEdge: null })
+    setDrawing(false)
   }
 
   const zone = ZONES[s.zone]
@@ -116,8 +163,8 @@ export default function App() {
         <p className="muted">What can you build on a plot in an orange zone, and what could it look like?</p>
 
         <div className="row">
-          <button onClick={startDrawing}>Draw plot</button>
-          <button onClick={clear}>Clear</button>
+          <button className={drawing ? 'active' : ''} onClick={startDrawing} disabled={!mapReady}>Draw plot</button>
+          <button onClick={clear} disabled={!mapReady || (!s.plot && !drawing)}>Clear</button>
         </div>
 
         <h2>Site</h2>
@@ -145,7 +192,15 @@ export default function App() {
         </label>
         <label>
           Road width, boundary to boundary (m)
-          <input type="number" min={2} max={80} step={1} value={s.roadWidth} onChange={(e) => s.set({ roadWidth: Math.max(2, Number(e.target.value) || 2) })} />
+          <input
+            type="number" min={2} max={80} step={1} value={roadText}
+            onChange={(e) => {
+              setRoadText(e.target.value)
+              const w = Number(e.target.value)
+              if (e.target.value !== '' && Number.isFinite(w) && w >= 2 && w <= 80) s.set({ roadWidth: w })
+            }}
+            onBlur={() => setRoadText(String(s.roadWidth))}
+          />
         </label>
         <label className="check">
           <input type="checkbox" checked={s.nearStation} onChange={(e) => s.set({ nearStation: e.target.checked })} />
@@ -154,7 +209,10 @@ export default function App() {
 
         {error && <p className="hint warn">{error}</p>}
         {busy && <p className="hint">Working it out…</p>}
-        {!result && !error && !busy && <p className="hint">Click “Draw plot”, then click the corners on the map. Click the last corner again to finish.</p>}
+        {!mapReady && <p className="hint">Loading the map…</p>}
+        {mapReady && drawing && <p className="hint">Click the corners of the plot on the map. Click the last corner again to finish.</p>}
+        {mapReady && !drawing && !result && !error && !busy && <p className="hint">Click “Draw plot”, then click the corners on the map. After that you can drag a corner or the whole plot to change it.</p>}
+        {result && !drawing && <p className="muted small">Drag a corner or the whole plot to reshape it. Everything updates as you drag.</p>}
 
         {result && (
           <>
@@ -179,6 +237,8 @@ export default function App() {
             <label className="check"><input type="checkbox" checked={s.showLow} onChange={(e) => s.set({ showLow: e.target.checked })} /><span className="dot amber" />Space allowed under 23 m</label>
             <label className="check"><input type="checkbox" checked={s.showHigh} onChange={(e) => s.set({ showHigh: e.target.checked })} /><span className="dot blue" />Space allowed for a high-rise</label>
             <label className="check"><input type="checkbox" checked={s.showDesign} onChange={(e) => s.set({ showDesign: e.target.checked })} /><span className="dot green" />Concept design</label>
+            <label className="check"><input type="checkbox" checked={s.showExisting} onChange={(e) => s.set({ showExisting: e.target.checked })} />Existing buildings on the plot</label>
+            <p className="muted small">Off by default: the plot is treated as an empty field, so buildings on it count for nothing. Neighbours always stay.</p>
 
             <h2>Concept designs</h2>
             {result.designs.length === 0 && <p className="hint">The plot is too small for a building that meets the rules.</p>}

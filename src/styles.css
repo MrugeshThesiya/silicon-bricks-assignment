@@ -25,3 +25,5 @@ li.pass .icon { background: var(--pass); } li.fail .icon { background: var(--fai
 .foot { color: var(--muted); font-size: 11px; margin-top: 20px; }
 #map { height: 100%; }
 .hint.warn { background: #fef2f2; color: #991b1b; }
+.muted.small { font-size: 12px; margin: -2px 0 8px; }
+button:disabled { opacity: .5; cursor: default; }
