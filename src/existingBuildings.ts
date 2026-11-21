@@ -1,6 +1,7 @@
 import type { FilterSpecification, Map as MapLibreMap } from 'maplibre-gl'
 import type { Geometry } from 'geojson'
 import { Frame } from './geo/frame'
+import { BAKED_LAYER, BAKED_SOURCE } from './baked'
 import { areaMP, intersection, polyOf, toCCW, type MP, type Ring } from './geo/poly'
 
 /**
@@ -8,7 +9,7 @@ import { areaMP, intersection, polyOf, toCCW, type MP, type Ring } from './geo/p
  * stand on it are hidden by default: they would clash with the envelopes and designs, and they count for nothing
  * in the floor area or open space. Neighbouring buildings are never touched.
  */
-const LAYERS = ['building', 'building-3d']
+const LAYERS = ['building', 'building-3d', BAKED_LAYER]
 const SOURCE = 'openmaptiles'
 const MIN_OVERLAP = 0.2 // m²; ignores a neighbour that only touches the plot edge
 
@@ -64,7 +65,10 @@ export function setHiddenBuildings(map: MapLibreMap, ids: (string | number)[]) {
   }
 }
 
-/** Building features that are in the tiles loaded right now. The same building can appear once per tile it crosses. */
+/** Building features that are loaded right now: the live tiles, and the baked fallback copy when it is on the map. */
 export function loadedBuildings(map: MapLibreMap): Feat[] {
-  return map.querySourceFeatures(SOURCE, { sourceLayer: 'building' }) as unknown as Feat[]
+  const out: Feat[] = []
+  if (map.getSource(SOURCE)) out.push(...(map.querySourceFeatures(SOURCE, { sourceLayer: 'building' }) as unknown as Feat[]))
+  if (map.getSource(BAKED_SOURCE)) out.push(...(map.querySourceFeatures(BAKED_SOURCE) as unknown as Feat[]))
+  return out
 }

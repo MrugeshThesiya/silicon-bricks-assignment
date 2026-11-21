@@ -18,6 +18,15 @@ npm run build    # type check + production build into dist/
 npm run preview  # serve the production build
 ```
 
+## If the live map is down (fallback)
+
+The basemap and buildings are loaded live from OpenFreeMap. A baked copy of the OSM building footprints within 2 km of the example plot is shipped as `public/data/buildings.geojson` (source, licence and extraction date: `public/data/README.md`; regenerate with `node scripts/bake-buildings.mjs`).
+It is used only when the live service fails:
+- the live style cannot be loaded (error, or no answer within 12 s): the map is rebuilt on a plain background with the baked buildings (no street map, no edge numbers);
+- the style loads but its tiles keep failing: the baked buildings are added on top of the base map.
+
+The panel then says it is showing a saved copy. To try it: open the app with `?basemap=local` (force the fallback) or `?basemap=broken` (simulate a failing live style).
+
 ## Deploy (Cloudflare Pages, static)
 
 ```bash

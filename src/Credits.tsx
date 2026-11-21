@@ -15,7 +15,8 @@ export function Credits() {
         <h3>Map</h3>
         <ul>
           <li>Map data © <A href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</A>, available under the <A href="https://opendatacommons.org/licenses/odbl/1-0/">Open Database Licence (ODbL)</A>.</li>
-          <li>Basemap tiles and style: <A href="https://openfreemap.org">OpenFreeMap</A>, <A href="https://www.openmaptiles.org/">© OpenMapTiles</A>.</li>
+          <li>Basemap tiles and style: <A href="https://openfreemap.org">OpenFreeMap</A>, <A href="https://www.openmaptiles.org/">© OpenMapTiles</A>. They are loaded live from the OpenFreeMap service.</li>
+          <li>Fallback: if that service cannot be reached, a saved copy of the OSM building footprints around the example plot is shown instead (<code>public/data/</code>, ODbL, © OpenStreetMap contributors).</li>
         </ul>
         <h3>Rules</h3>
         <ul>
