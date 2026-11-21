@@ -5,4 +5,5 @@ transcripts/
 *.key
 node_modules/
 dist/
-MY-TODO.md
+TASKS.md
+notes/
