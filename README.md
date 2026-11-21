@@ -18,6 +18,18 @@ npm run build    # type check + production build into dist/
 npm run preview  # serve the production build
 ```
 
+## Deploy (Cloudflare Pages, static)
+
+```bash
+npm ci
+npm run build        # type check + production build into dist/
+```
+
+Upload the **contents of `dist/`** with Cloudflare Pages "Direct Upload" (or connect the repo with build command `npm run build` and output folder `dist`).
+`dist/assets/maplibre-gl-worker.mjs` must be in the upload: without it the map never loads ("Worker failed to load" in the browser console).
+After deploying, open the live URL, wait for "Click “Draw plot”…" to appear in the panel, press **Example plot**, and check that the browser console shows no errors.
+There is no backend, no environment variable and no server-side routing to configure.
+
 ## Stack
 
 All open source, built as a static site (no backend), to be hosted on Cloudflare Pages.
