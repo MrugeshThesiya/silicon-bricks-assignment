@@ -2,6 +2,8 @@
 
 A browser tool for a developer who owns a plot in Bangkok and wants to know what they can build on it before paying an architect. The user draws a plot on a map, and the tool shows the zoning rules that apply, the 3D space the building may fill, and concept designs that fit, each with a pass/fail checklist.
 
+**Live demo:** https://building-planner-app.pages.dev/ (Cloudflare Pages, static).
+
 **Status:** working prototype. Press **Example plot** for a ready-made corner plot on Sukhumvit Road and Soi 95 (its zone, road widths and station distance are estimates), or draw a plot (any shape), pick the zone type, the road edge and its width, and say what the other sides border (neighbour, another road, or a canal). The tool shows the rules that apply, the space allowed under 23 m and for a high-rise (with the road height limit as a stepped slope), and concept designs, each with a pass/fail checklist that cites rule IDs. Five building types are offered: condominium, hotel, office, mixed use (shops below, condominium above) and shophouse / townhouse rows. The limits for each come from the plan's "prohibited unless" lists (hotel rooms, office and shop floor area, housing over 10,000 m²) and MR 55 for row houses; see `docs/zoning-rules.md` section 4b. Existing OSM buildings on the plot are hidden by default (the plot is treated as an empty field) and can be shown with a toggle. Known data limit: OpenStreetMap building coverage is patchy and building heights are mostly untagged (drawn at a default height), so the surroundings can look flatter and emptier than reality in places.
 
 **Scope:** one orange-zone (medium-to-high-density residential) area of Bangkok, under the 2013 Comprehensive Plan. The plot is assumed to be an empty field.
