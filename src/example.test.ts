@@ -16,13 +16,13 @@ describe('example plot (Sukhumvit Road x Soi 95)', () => {
   it('is within 500 m of the BTS station from every corner (A-10)', () => {
     for (const p of EXAMPLE.plot) {
       const [x, y] = f.toXY(p)
-      expect(Math.hypot(x, y)).toBeLessThan(300)
+      expect(Math.hypot(x, y)).toBeLessThan(250)
     }
   })
-  it('faces Soi 95 (12 m) on edge 0 and Sukhumvit Road (36 m) on edge 3, and the road sets the height plane', () => {
-    expect(r.edges[0].length).toBeCloseTo(50, 0)
+  it('faces Soi 95 (12 m) on edge 2 and Sukhumvit Road (36 m) on edge 3, and the road sets the height plane', () => {
+    expect(r.edges[2].length).toBeCloseTo(50, 0)
     expect(r.edges[3].length).toBeCloseTo(40, 0)
-    expect(r.uses[0]).toEqual({ kind: 'road', width: 12 })
+    expect(r.uses[2]).toEqual({ kind: 'road', width: 12 })
     expect(r.uses[3]).toEqual({ kind: 'road', width: 36 })
     expect(r.plane.width).toBe(36)
     expect(r.plane.n[0]).toBeGreaterThan(0.5) // the plane rises from the Sukhumvit side (west edge) towards the east

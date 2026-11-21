@@ -10,7 +10,7 @@ import { Credits } from './Credits'
 import { EdgeUses } from './EdgeUses'
 import { EXAMPLE } from './example'
 import { LOCAL_STYLE, addBakedBuildings } from './baked'
-import { buildingIdsOnPlot, loadedBuildings, setHiddenBuildings } from './existingBuildings'
+import { loadedBuildings, planHiding, setHiddenBuildings, setResidualBuildings } from './existingBuildings'
 import { ZONES, type ZoneId } from './rules/zones'
 import { edgesToFC, empty, floorsToFC, slicesToFC } from './mapData'
 
@@ -57,6 +57,7 @@ export default function App() {
     const boot = (mode: 'live' | 'local'): (() => void) => {
       let dead = false
       let loaded = false
+      let styleOk = false // the style file itself has been downloaded and parsed (the tiles may still be arriving)
       let wantBaked = false
       let timer: number | undefined
       const style = mode === 'local' ? LOCAL_STYLE : test === 'broken' ? STYLE.replace('liberty', 'no-such-style') : STYLE
@@ -105,6 +106,10 @@ export default function App() {
 
       if (mode === 'live') {
         let tileOk = false, tileErrors = 0
+        map.once('style.load', () => {
+          styleOk = true
+          window.clearTimeout(timer)
+        })
         map.on('sourcedata', (e) => {
           if (e.sourceId === 'openmaptiles' && e.isSourceLoaded) tileOk = true
         })
@@ -114,7 +119,7 @@ export default function App() {
           const sourceId = (e as unknown as { sourceId?: string }).sourceId
           if (!sourceId) {
             // The style itself (or something else with no source) failed to download.
-            if (!loaded && (err?.status !== undefined || /failed to fetch|networkerror|load failed/i.test(err?.message ?? ''))) failover('style')
+            if (!styleOk && (err?.status !== undefined || /failed to fetch|networkerror|load failed/i.test(err?.message ?? ''))) failover('style')
           } else if (sourceId === 'openmaptiles' && !tileOk && ++tileErrors >= 3) {
             // The style loaded but its tiles do not: keep the base map, put the baked buildings on top.
             setBasemap('baked')
@@ -122,8 +127,9 @@ export default function App() {
             else wantBaked = true
           }
         })
+        // Only the style download is timed. Slow tiles are not a reason to leave the live map: they are handled by the tile-error count above.
         timer = window.setTimeout(() => {
-          if (!loaded) failover('timeout')
+          if (!styleOk) failover('timeout')
         }, 12000)
       }
 
@@ -214,11 +220,12 @@ export default function App() {
     let timer: number | undefined
     const run = () => {
       if (!ready.current) return
-      const ids = s.plot && !s.showExisting ? buildingIdsOnPlot(loadedBuildings(map), s.plot) : []
-      const key = ids.map(String).sort().join(',')
+      const plan = s.plot && !s.showExisting ? planHiding(loadedBuildings(map), s.plot) : { ids: [], residual: [] }
+      const key = `${plan.ids.map(String).sort().join(',')}|${plan.residual.length}`
       if (key === hidden.current) return
       hidden.current = key
-      setHiddenBuildings(map, ids)
+      setHiddenBuildings(map, plan.ids)
+      setResidualBuildings(map, plan.residual)
     }
     const later = () => {
       window.clearTimeout(timer)

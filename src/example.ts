@@ -9,7 +9,7 @@ import type { ZoneId } from './rules/zones'
  * - Soi 95 right-of-way 12 m: lower quartile of the building-to-building gap along the soi in the OSM data (10th percentile 9 m, median 13 m) (A-05).
  * - Sukhumvit Road right-of-way 36 m: gap between the two carriageway lines plus a carriageway each side; the building-to-building gap
  *   has a 10th percentile of 32 m and a lower quartile of 40 m (A-05).
- * - Within 500 m of a station: about 175 to 230 m from the BTS Bang Chak station node (A-10).
+ * - Within 500 m of a station: about 125 to 190 m from the BTS Bang Chak station node (A-10).
  * - The plot itself is hypothetical, an empty 50 m x 40 m rectangle (A-01).
  */
 
@@ -28,9 +28,11 @@ const at = (u: number, v: number): [number, number] => [
   r7(J.lat + (u * U[1] + v * V[1]) / KY),
 ]
 
-// Counter-clockwise. Edge 0: the 50 m frontage on Soi 95. Edge 1: back. Edge 2: neighbour. Edge 3: the 40 m frontage on Sukhumvit Road.
-// u = 8 m is the east boundary of Sukhumvit Road (centre line about 10 m west of J, half of 36 m); v = 6 m is the edge of the 12 m soi.
-const corners = [at(8, 6), at(58, 6), at(58, 46), at(8, 46)]
+// South side of the soi (v negative). The north corner is taken by a 125 m tower in the OSM data, which would be "demolished" by the plot;
+// on this side the plot overlaps only four 5 m buildings (573 m² of 2,000 m²).
+// Counter-clockwise. Edge 0: back (neighbour). Edge 1: neighbour. Edge 2: the 50 m frontage on Soi 95. Edge 3: the 40 m frontage on Sukhumvit Road.
+// u = 8 m is the east boundary of Sukhumvit Road (centre line about 10 m west of J, half of 36 m); v = -6 m is the edge of the 12 m soi.
+const corners = [at(8, -46), at(58, -46), at(58, -6), at(8, -6)]
 
 export const STATION: [number, number] = [100.6053, 13.6968] // BTS Bang Chak (OSM station node)
 
@@ -44,11 +46,11 @@ export const EXAMPLE: {
   extra: Record<number, EdgeUse>
   nearStation: boolean
 } = {
-  name: 'Corner of Sukhumvit Road and Sukhumvit Soi 95, about 200 m from BTS Bang Chak',
+  name: 'Corner of Sukhumvit Road and Sukhumvit Soi 95 (south side), about 150 m from BTS Bang Chak',
   plot: [...corners, corners[0]],
-  center: at(33, 26),
+  center: at(33, -26),
   zone: 'Y.7',
-  roadEdge: 0,
+  roadEdge: 2,
   roadWidth: 12,
   extra: { 3: { kind: 'road', width: 36 } },
   nearStation: true,

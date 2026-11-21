@@ -2,7 +2,7 @@
 
 A browser tool for a developer who owns a plot in Bangkok and wants to know what they can build on it before paying an architect. The user draws a plot on a map, and the tool shows the zoning rules that apply, the 3D space the building may fill, and concept designs that fit, each with a pass/fail checklist.
 
-**Status:** working prototype. Press **Example plot** for a ready-made corner plot on Sukhumvit Road (its zone, road widths and station distance are estimates), or draw a plot (any shape), pick the zone type, the road edge and its width, and say what the other sides border (neighbour, another road, or a canal). The tool shows the rules that apply, the space allowed under 23 m and for a high-rise (with the road height limit as a stepped slope), and three concept designs (low-rise block, tower, podium plus tower), each with a pass/fail checklist that cites rule IDs. Existing OSM buildings on the plot are hidden by default (the plot is treated as an empty field) and can be shown with a toggle. Known data limit: OpenStreetMap building coverage is patchy and building heights are mostly untagged (drawn at a default height), so the surroundings can look flatter and emptier than reality in places.
+**Status:** working prototype. Press **Example plot** for a ready-made corner plot on Sukhumvit Road and Soi 95 (its zone, road widths and station distance are estimates), or draw a plot (any shape), pick the zone type, the road edge and its width, and say what the other sides border (neighbour, another road, or a canal). The tool shows the rules that apply, the space allowed under 23 m and for a high-rise (with the road height limit as a stepped slope), and three concept designs (low-rise block, tower, podium plus tower), each with a pass/fail checklist that cites rule IDs. Existing OSM buildings on the plot are hidden by default (the plot is treated as an empty field) and can be shown with a toggle. Known data limit: OpenStreetMap building coverage is patchy and building heights are mostly untagged (drawn at a default height), so the surroundings can look flatter and emptier than reality in places.
 
 **Scope:** one orange-zone (medium-to-high-density residential) area of Bangkok, under the 2013 Comprehensive Plan. The plot is assumed to be an empty field.
 
@@ -22,7 +22,7 @@ npm run preview  # serve the production build
 
 The basemap and buildings are loaded live from OpenFreeMap. A baked copy of the OSM building footprints within 2 km of the example plot is shipped as `public/data/buildings.geojson` (source, licence and extraction date: `public/data/README.md`; regenerate with `node scripts/bake-buildings.mjs`).
 It is used only when the live service fails:
-- the live style cannot be loaded (error, or no answer within 12 s): the map is rebuilt on a plain background with the baked buildings (no street map, no edge numbers);
+- the live style file cannot be downloaded (error, or no answer within 12 s; slow tiles alone do not count): the map is rebuilt on a plain background with the baked buildings (no street map, no edge numbers);
 - the style loads but its tiles keep failing: the baked buildings are added on top of the base map.
 
 The panel then says it is showing a saved copy. To try it: open the app with `?basemap=local` (force the fallback) or `?basemap=broken` (simulate a failing live style).
