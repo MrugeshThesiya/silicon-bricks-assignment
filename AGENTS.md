@@ -59,7 +59,7 @@ The current session's file is:
 - **Data:** bake as much as possible into static files (GeoJSON / PMTiles) at build time. No live Overpass or other third-party API calls at runtime in the demo.
 - **District (provisional):** Huai Khwang / Ratchada, Bangkok (around MRT Huai Khwang and Sutthisan), on a side street (soi) off the main road and within 500 m of an MRT station. The map already opens there. Fallback: Phra Khanong / On Nut. The sub-area code (assumed Y.7 or Y.6) is **not verified**: confirm it on the official BMA zoning map or the "Check ผังเมือง กทม." app before relying on it.
 - **Build order for the plot:** start by building for an empty field only, with nothing on the plot. Redevelopment (a plot with existing buildings) is a later step, only after the empty-field version works end to end. The assignment doesn't say the plot is empty, so the design must not block redevelopment later. When it is added, existing buildings inside the plot are treated as to be demolished: ghosted or hidden (a toggle is ideal), counting none of their area toward FAR or open space. Neighbouring buildings and roads always stay. Demolition rules, existing-structure rights and heritage constraints are out of scope. State the assumption and its limits in the write-up.
-- **Stack:** Vite + TypeScript, MapLibre GL JS, Three.js, Terra Draw, clipper-lib (replaced Turf.js and polyclip-ts, which was too slow), Web Workers, Vitest. Open source only.
+- **Stack:** Vite + TypeScript, MapLibre GL JS (Three.js dropped: the envelope slope uses thin extrusion slices), Terra Draw, clipper-lib (replaced Turf.js and polyclip-ts, which was too slow), Web Workers, Vitest. Open source only.
 
 ### OSM attribution (required, do not skip)
 

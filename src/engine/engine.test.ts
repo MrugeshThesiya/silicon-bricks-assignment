@@ -202,3 +202,23 @@ describe('podium + tower', () => {
     expect(compute({ ...base, roadWidth: 8 })!.designs.map((x) => x.id)).toEqual(['low'])
   })
 })
+
+describe('envelope slices', () => {
+  const r = compute({ ...base, plot: [[0, 0], [30, 0], [30, 80], [0, 80], [0, 0]].map(([x, y]) => f.toLL([x, y])) })!
+  it('are finer than a floor so the height limit reads as a slope', () => {
+    expect(r.slicesHigh.length).toBeGreaterThan(20)
+    for (let i = 1; i < r.slicesHigh.length; i++) {
+      expect(r.slicesHigh[i].top).toBeGreaterThan(r.slicesHigh[i - 1].top)
+      expect(areaMP(r.slicesHigh[i].mp)).toBeLessThanOrEqual(areaMP(r.slicesHigh[i - 1].mp) + 0.01)
+    }
+  })
+  it('every slice stays under the road height limit (R-20)', () => {
+    for (const sl of r.slicesHigh) {
+      const minD = Math.min(...sl.mp.flatMap((p) => p[0].map((q) => (q[0] - r.plane.a[0]) * r.plane.n[0] + (q[1] - r.plane.a[1]) * r.plane.n[1])))
+      expect(sl.top).toBeLessThanOrEqual(2 * (minD + r.plane.width) + 0.01)
+    }
+  })
+  it('the under-23 m envelope never reaches 23 m', () => {
+    expect(Math.max(...r.slicesLow.map((s) => s.top))).toBeLessThan(23)
+  })
+})

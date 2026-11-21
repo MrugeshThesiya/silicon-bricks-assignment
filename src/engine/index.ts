@@ -108,16 +108,19 @@ export function stackFloors(footprint: MP, plane: Plane | null, floorH: number, 
   return floors
 }
 
-function buildSlices(env: MP, plane: Plane, floorH: number, maxTop: number): Slice[] {
+/** Height of one slice of the drawn envelope. Finer than a floor, so the road height limit shows as a smooth slope. */
+export const ENVELOPE_STEP = 0.8
+
+function buildSlices(env: MP, plane: Plane, step: number, maxTop: number): Slice[] {
   const out: Slice[] = []
-  for (let k = 1; k * floorH <= maxTop + 1e-6; k++) {
-    const top = k * floorH
+  for (let k = 1; k * step <= maxTop + 1e-6; k++) {
+    const top = k * step
     const mp = allowedAt(env, plane, top)
     const area = areaMP(mp)
     if (area < 1) break
     const last = out[out.length - 1]
     if (last && Math.abs(last.area - area) < 0.05) last.top = top
-    else out.push({ base: (k - 1) * floorH, top, mp, area })
+    else out.push({ base: (k - 1) * step, top, mp, area })
   }
   return out
 }
@@ -414,8 +417,8 @@ export function compute(input: Input, floorH = FLOOR_HEIGHT): Result | null {
     osrMinAtMax: zone.osr * maxGFA,
     setbacks: { road, side: SIDE_SETBACK_LOW, high: SETBACK_HIGH },
     envLow, envHigh,
-    slicesLow: buildSlices(envLow, plane, floorH, MAX_LOW_FLOORS * floorH),
-    slicesHigh: buildSlices(envHigh, plane, floorH, capHigh),
+    slicesLow: buildSlices(envLow, plane, ENVELOPE_STEP, MAX_LOW_FLOORS * floorH),
+    slicesHigh: buildSlices(envHigh, plane, ENVELOPE_STEP, capHigh),
     designs,
   }
 }

@@ -26,7 +26,7 @@ All open source, built as a static site (no backend), to be hosted on Cloudflare
 |---|---|
 | App | Vite, TypeScript, React, Zustand |
 | Map and real site | MapLibre GL JS |
-| 3D envelope and designs | MapLibre fill-extrusion layers (stepped slices). Three.js is installed for a smooth sloped surface later. |
+| 3D envelope and designs | MapLibre fill-extrusion layers (thin 0.8 m slices, so the height limit reads as a smooth slope). |
 | Drawing the plot | Terra Draw |
 | Geometry | clipper-lib (Clipper 6: boolean ops and rounded insets), own helpers in `src/geo/` |
 | Tests | Vitest |
