@@ -180,11 +180,13 @@ First version: show the base limit, and list the bonus routes as "not modelled".
 | A-05 | The road width the user enters is the **right-of-way width** (boundary to boundary). | R-30 and R-20 use boundaries. OpenStreetMap only has road centre lines. | Heights and setbacks are off. We need a visible input and a default. |
 | A-06 | Walls are assumed to have **openings**. | Stricter, so it is the safe side (R-16). | Side setbacks may be larger than needed. |
 | A-07 | If **any part** of a design reaches 23 m, the **whole building** is treated as a high-rise. | The 6 m rule applies to the outermost part of the building (R-34). | A low podium may be allowed closer than we allow. |
-| A-08 | A plot on more than two roads uses the **widest** road for the height plane. | Article 45 covers two roads only. | Height limit may be too generous or too tight. |
+| A-08 | A plot on two or more roads uses the **widest** road for the height plane. | R-21 and R-22 say the wider road for two roads (corner plot, or a building between two roads). We extend it to more than two. | Height limit may be too generous or too tight. |
 | A-09 | Parking is **informational**: 1 space per 120 m² of floor area, shown but not pass or fail. | Unverified (section 6). | Not part of the checklist. |
 | A-10 | The user states whether the plot is **within 500 m of a station** or on a **30 m road**, with a toggle. | R-40 needs it. We have no station data baked in. | A big condo may be shown as allowed when it isn't. |
 | A-11 | The ground is **flat**. Heights are measured from the plot's ground level. | Bangkok is flat. | Negligible. |
 | A-12 | No local **building-line** or road-widening ordinance applies. | Unknown. C article 3 says to measure from such a line if one exists. | Road setbacks may be short. |
+| A-13 | A **canal** edge is a small waterway: 3 m setback if under 10 m wide, 6 m if 10 m or wider (R-15). A high-rise keeps its 6 m (R-34). The plot boundary is taken as the water's edge. A large water body (12 m) is not offered. Canals do not make a height plane. | R-15. R-20 to R-22 are about roads only. | A plot on a river or lake would be shown with too small a setback. |
+| A-14 | Extra **road** edges each get their own setback (R-11 to R-14) from their own width. For a corner plot the length of the building along each narrower road is checked against 60 m (R-22). R-21 (a plot between two roads, not a corner) is **not** modelled. | R-21, R-22. | A through-plot may get a different height limit from the authority. |
 
 ## 8. Open questions
 

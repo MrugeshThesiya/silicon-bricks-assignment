@@ -6,9 +6,11 @@ import type { Polygon } from 'geojson'
 import { useApp } from './store'
 import type { Check, Input } from './engine'
 import { useCompute } from './useCompute'
+import { Credits } from './Credits'
+import { EdgeUses } from './EdgeUses'
 import { buildingIdsOnPlot, loadedBuildings, setHiddenBuildings } from './existingBuildings'
 import { ZONES, type ZoneId } from './rules/zones'
-import { empty, floorsToFC, roadEdgeToFC, slicesToFC } from './mapData'
+import { edgesToFC, empty, floorsToFC, slicesToFC } from './mapData'
 
 // Basemap: OpenFreeMap (OpenStreetMap data). Its style supplies the
 // "© OpenStreetMap contributors" attribution, shown by the control below.
@@ -29,8 +31,8 @@ export default function App() {
   // The road width box keeps its own text while you type, so you can clear it and retype; it commits once the value is valid.
   const [roadText, setRoadText] = useState(String(s.roadWidth))
   const input = useMemo<Input | null>(
-    () => (s.plot ? { plot: s.plot, zone: s.zone, roadEdge: s.roadEdge, roadWidth: s.roadWidth, nearStation: s.nearStation } : null),
-    [s.plot, s.zone, s.roadEdge, s.roadWidth, s.nearStation],
+    () => (s.plot ? { plot: s.plot, zone: s.zone, roadEdge: s.roadEdge, roadWidth: s.roadWidth, nearStation: s.nearStation, extra: s.extra } : null),
+    [s.plot, s.zone, s.roadEdge, s.roadWidth, s.nearStation, s.extra],
   )
   // The engine runs in a Web Worker, so drawing and dragging never wait for it.
   const { result, busy, error } = useCompute(input)
@@ -71,8 +73,20 @@ export default function App() {
       ext('env-low', '#f59e0b', 0.22)
       ext('env-high', '#2563eb', 0.2)
       ext('design', '#10b981', 0.92)
-      map.addSource('road-edge', { type: 'geojson', data: empty })
-      map.addLayer({ id: 'road-edge', source: 'road-edge', type: 'line', paint: { 'line-color': '#dc2626', 'line-width': 5 } })
+      map.addSource('edges', { type: 'geojson', data: empty })
+      map.addLayer({
+        id: 'edges', source: 'edges', type: 'line',
+        paint: {
+          'line-color': ['match', ['get', 'kind'], 'canal', '#0284c7', '#dc2626'],
+          'line-width': ['case', ['get', 'main'], 6, 3],
+          'line-opacity': ['match', ['get', 'kind'], 'plot', 0, 1],
+        },
+      })
+      map.addLayer({
+        id: 'edge-labels', source: 'edges', type: 'symbol',
+        layout: { 'symbol-placement': 'line-center', 'text-field': ['get', 'label'], 'text-font': ['Noto Sans Bold'], 'text-size': 13, 'text-allow-overlap': true, 'text-offset': [0, -1] },
+        paint: { 'text-color': '#111827', 'text-halo-color': '#fff', 'text-halo-width': 2 },
+      })
       ready.current = true
       draw.start()
       draw.on('finish', (id, context) => {
@@ -110,7 +124,7 @@ export default function App() {
   useEffect(() => put('env-low', result && s.showLow ? slicesToFC(result.slicesLow, result.frame) : empty), [result, s.showLow])
   useEffect(() => put('env-high', result && s.showHigh ? slicesToFC(result.slicesHigh, result.frame) : empty), [result, s.showHigh])
   useEffect(() => put('design', result && design && s.showDesign ? floorsToFC(design.floors, result.frame) : empty), [result, design, s.showDesign])
-  useEffect(() => put('road-edge', roadEdgeToFC(result)), [result])
+  useEffect(() => put('edges', edgesToFC(result)), [result])
 
   // Hide the OSM buildings that stand on the plot (they are treated as demolished). Re-checked whenever the map goes idle,
   // because more tiles may have loaded since.
@@ -142,7 +156,7 @@ export default function App() {
   const startDrawing = () => {
     if (!ready.current) return
     drawRef.current?.clear()
-    useApp.getState().set({ plot: null, roadEdge: null })
+    useApp.getState().set({ plot: null, roadEdge: null, extra: {} })
     drawRef.current?.setMode('polygon')
     setDrawing(true)
   }
@@ -150,7 +164,7 @@ export default function App() {
     if (!ready.current) return
     drawRef.current?.clear()
     drawRef.current?.setMode('select')
-    useApp.getState().set({ plot: null, roadEdge: null })
+    useApp.getState().set({ plot: null, roadEdge: null, extra: {} })
     setDrawing(false)
   }
 
@@ -202,6 +216,9 @@ export default function App() {
             onBlur={() => setRoadText(String(s.roadWidth))}
           />
         </label>
+        {result && result.edges.length > 1 && (
+          <EdgeUses edges={result.edges} roadEdge={result.roadEdge} extra={s.extra} onChange={(extra) => s.set({ extra })} />
+        )}
         <label className="check">
           <input type="checkbox" checked={s.nearStation} onChange={(e) => s.set({ nearStation: e.target.checked })} />
           Within 500 m of an MRT/BTS station
@@ -276,10 +293,7 @@ export default function App() {
           </>
         )}
 
-        <p className="foot">
-          Prototype. Rules from the 2013 Bangkok Comprehensive Plan and Ministerial Regulations 33 and 55; assumptions in docs/zoning-rules.md.
-          Zone sub-area and road width are not checked against official data. Map data © OpenStreetMap contributors.
-        </p>
+        <Credits />
       </aside>
       <div id="map" ref={mapEl} />
     </div>

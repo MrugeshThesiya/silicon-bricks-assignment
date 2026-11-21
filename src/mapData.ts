@@ -39,12 +39,16 @@ export const floorsToFC = (floors: Floor[], frame: Frame): FeatureCollection => 
   return { type: 'FeatureCollection', features: feats }
 }
 
-export const roadEdgeToFC = (r: Result | null): FeatureCollection => {
+/** Every plot edge as a line with its number; roads and canals are coloured, neighbours are invisible (only the label shows). */
+export const edgesToFC = (r: Result | null): FeatureCollection => {
   if (!r) return empty
-  const e = r.edges[r.roadEdge]
   return {
     type: 'FeatureCollection',
-    features: [{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [r.frame.toLL(e.a), r.frame.toLL(e.b)] } }],
+    features: r.edges.map((e, i): Feature => ({
+      type: 'Feature',
+      properties: { label: `${i + 1}`, kind: r.uses[i]?.kind ?? 'plot', main: i === r.roadEdge },
+      geometry: { type: 'LineString', coordinates: [r.frame.toLL(e.a), r.frame.toLL(e.b)] },
+    })),
   }
 }
 

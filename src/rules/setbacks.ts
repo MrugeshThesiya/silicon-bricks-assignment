@@ -35,3 +35,11 @@ export function lawMinOpenSpace(regime: Regime, plotArea: number, largestFloor: 
 export function minRoadWidthHigh(totalFloorArea: number): number {
   return totalFloorArea > 30000 ? 18 : 10
 }
+
+/** Setback from a canal or small waterway for a building under 23 m. R-15 (MR 55 art. 42), A-13. */
+export function canalSetback(width: number): number {
+  return width < 10 ? 3 : 6
+}
+
+/** Longest allowed building length along the narrower road of a corner plot. R-22 (MR 55 art. 46). */
+export const MAX_LENGTH_NARROW_ROAD = 60

@@ -27,3 +27,15 @@ li.pass .icon { background: var(--pass); } li.fail .icon { background: var(--fai
 .hint.warn { background: #fef2f2; color: #991b1b; }
 .muted.small { font-size: 12px; margin: -2px 0 8px; }
 button:disabled { opacity: .5; cursor: default; }
+.credits details { font-size: 12px; margin-top: 6px; }
+.credits summary { cursor: pointer; color: var(--muted); }
+.credits h3 { font-size: 12px; margin: 10px 0 4px; }
+.credits ul { margin: 0; padding-left: 18px; color: var(--muted); }
+.credits li { margin-bottom: 4px; }
+.credits a { color: #2563eb; }
+.credits code { font-size: 11px; }
+.edges { margin: 0 0 10px; font-size: 13px; }
+.edges summary { cursor: pointer; color: var(--muted); }
+.edge-row { display: grid; grid-template-columns: 1fr 96px 74px; gap: 6px; align-items: center; margin-bottom: 4px; }
+.edge-row select, .edge-row input { width: 100%; box-sizing: border-box; padding: 4px; }
+.edge-row .w { display: flex; align-items: center; gap: 4px; }

@@ -64,8 +64,8 @@ describe('stacking', () => {
 
 describe('designs', () => {
   const r = compute(base)!
-  it('produces two designs that pass every check', () => {
-    expect(r.designs.map((d) => d.id)).toEqual(['low', 'tower'])
+  it('produces three designs that pass every check', () => {
+    expect(r.designs.map((d) => d.id)).toEqual(['low', 'tower', 'podium'])
     for (const d of r.designs) {
       expect(d.checks.filter((c) => c.status === 'fail')).toEqual([])
       expect(d.gfa).toBeLessThanOrEqual(r.maxGFA + 0.01)
@@ -134,6 +134,71 @@ describe('robustness', () => {
   })
   it('shrinkToArea hits the target to 1e-3 m²', () => {
     const mp = polyOf([[0, 0], [37, 0], [37, 23], [11, 23], [11, 41], [0, 41]])
-    for (const t of [900, 500, 123.4]) expect(areaMP(shrinkToArea(mp, t))).toBeCloseTo(t, 2)
+    for (const t of [900, 500, 123.4]) {
+      const a = areaMP(shrinkToArea(mp, t))
+      expect(a).toBeLessThanOrEqual(t) // never over the target
+      expect(a).toBeCloseTo(t, 2)
+    }
+  })
+})
+
+describe('other roads and canals (A-13, A-14)', () => {
+  // Edges of the 40 x 50 m rectangle: 0 south (the road), 1 east, 2 north, 3 west.
+  it('a canal edge takes the canal setback (R-15): 6 m if 10 m or wider', () => {
+    const r = compute({ ...base, extra: { 2: { kind: 'canal', width: 12 } } })!
+    // 3 m sides, 1.2 m road side, 6 m canal side
+    expect(areaMP(r.envLow)).toBeCloseTo(34 * (50 - 1.2 - 6), 0)
+    const small = compute({ ...base, extra: { 2: { kind: 'canal', width: 5 } } })!
+    expect(areaMP(small.envLow)).toBeCloseTo(34 * (50 - 1.2 - 3), 0)
+  })
+  it('a canal does not change the height plane', () => {
+    const r = compute({ ...base, extra: { 2: { kind: 'canal', width: 12 } } })!
+    expect(r.plane.width).toBe(12)
+    expect(r.designs.flatMap((d) => d.checks).some((c) => c.id === 'corner')).toBe(false)
+  })
+  it('a second, wider road takes the setback for its width and sets the height plane (R-22)', () => {
+    const r = compute({ ...base, extra: { 1: { kind: 'road', width: 20 } } })!
+    expect(areaMP(r.envLow)).toBeCloseTo((40 - 3 - 2) * (50 - 1.2 - 3), 0) // west 3 m, east 2 m (R-14)
+    expect(r.plane.width).toBe(20)
+    expect(r.plane.n[0]).toBeCloseTo(-1) // the plane rises from the east edge
+    for (const d of r.designs) {
+      const c = d.checks.find((x) => x.id === 'corner')!
+      expect(c.status).toBe('pass')
+      expect(d.checks.filter((x) => x.status === 'fail')).toEqual([])
+    }
+  })
+  it('on a tie the edge facing the road keeps the height plane', () => {
+    const r = compute({ ...base, extra: { 1: { kind: 'road', width: 12 } } })!
+    expect(r.plane.n[1]).toBeCloseTo(1)
+  })
+  it('fails R-22 when the building is longer than 60 m along the narrower road', () => {
+    const long = [[0, 0], [100, 0], [100, 40], [0, 40], [0, 0]].map(([x, y]) => f.toLL([x, y]))
+    const r = compute({ ...base, plot: long, roadEdge: 1, roadWidth: 20, extra: { 0: { kind: 'road', width: 12 } }, zone: 'Y.7' })!
+    const c = r.designs[0].checks.find((x) => x.id === 'corner')!
+    expect(c.status).toBe('fail')
+  })
+  it('a high-rise needs one plot side of 12 m or more on a road wide enough (R-30)', () => {
+    const r = compute({ ...base, extra: { 1: { kind: 'road', width: 20 } } })!
+    const tower = r.designs.find((d) => d.id === 'tower')!
+    expect(tower.checks.find((c) => c.id === 'frontage')!.status).toBe('pass')
+  })
+})
+
+describe('podium + tower', () => {
+  const r = compute(base)!
+  const d = r.designs.find((x) => x.id === 'podium')!
+  it('has a wider podium of four floors under a slimmer tower, and is a high-rise', () => {
+    expect(d.floors.slice(0, 4).every((f) => Math.abs(f.area - d.floors[0].area) < 0.5)).toBe(true)
+    expect(d.floors[4].area).toBeLessThan(d.floors[0].area * 0.7)
+    expect(d.height).toBeLessThan(r.designs.find((x) => x.id === 'tower')!.height)
+    expect(d.regime).toBe('high')
+    expect(d.height).toBeGreaterThanOrEqual(23)
+    expect(d.gfa).toBeLessThanOrEqual(r.maxGFA + 0.01)
+  })
+  it('stays inside the 6 m setback at every level (A-07)', () => {
+    expect(d.checks.find((c) => c.id === 'setbacks')!.status).toBe('pass')
+  })
+  it('is not offered on a road under 10 m wide', () => {
+    expect(compute({ ...base, roadWidth: 8 })!.designs.map((x) => x.id)).toEqual(['low'])
   })
 })

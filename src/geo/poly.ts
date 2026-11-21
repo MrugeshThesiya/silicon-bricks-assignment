@@ -5,8 +5,8 @@ export type Ring = XY[]
 export type Poly = Ring[]
 export type MP = Poly[]
 
-// Clipper works on integers, so metres are scaled to 0.1 mm. Areas are measured on the rounded result, so they stay consistent.
-const SCALE = 1e4
+// Clipper works on integers, so metres are scaled to 0.01 mm. Areas are measured on the rounded result, so they stay consistent.
+const SCALE = 1e5
 type CPath = { X: number; Y: number }[]
 const toPath = (r: Ring): CPath => openRing(r).map(([x, y]) => ({ X: Math.round(x * SCALE), Y: Math.round(y * SCALE) }))
 const fromPath = (p: CPath): Ring => closeRing(p.map((q) => [q.X / SCALE, q.Y / SCALE] as XY))
@@ -166,15 +166,16 @@ export function shrinkToArea(mp: MP, target: number): MP {
   if (a0 <= target) return mp
   let lo = 0, flo = a0 - target // area above target
   let hi = Math.sqrt(a0), fhi = -target // inset of sqrt(area) removes everything
-  let best: MP = mp, bestErr = flo
+  let best: MP | null = null, bestErr = Infinity
   let side = 0
   for (let i = 0; i < 40; i++) {
     let t = (lo * fhi - hi * flo) / (fhi - flo)
     if (!(t > lo && t < hi)) t = (lo + hi) / 2
     const m = shrink(mp, t)
     const f = areaMP(m) - target
-    if (Math.abs(f) < bestErr) { best = m; bestErr = Math.abs(f) }
-    if (bestErr < 2e-3) break
+    // Never return something above the target: a rule limit (for example 30,000 m²) must not be exceeded by rounding.
+    if (f <= 0 && -f < bestErr) { best = m; bestErr = -f }
+    if (f <= 0 && -f < 2e-3) break
     if (f > 0) {
       lo = t; flo = f
       if (side === 1) fhi /= 2
@@ -185,7 +186,7 @@ export function shrinkToArea(mp: MP, target: number): MP {
       side = -1
     }
   }
-  return best
+  return best ?? shrink(mp, hi)
 }
 
 /** True when the ring has no repeated points and no edges that cross each other. */
@@ -208,7 +209,7 @@ export function isSimple(ring: Ring): boolean {
 }
 
 /** Keep the part of `mp` with dot(p - a, n) >= offset. `n` must be a unit vector. */
-export function clipHalfPlane(mp: MP, a: XY, n: XY, offset: number, extent = 5000): MP {
+export function clipHalfPlane(mp: MP, a: XY, n: XY, offset: number, extent = 2000): MP {
   const t: XY = [-n[1], n[0]]
   const q: XY = [a[0] + n[0] * offset, a[1] + n[1] * offset]
   const rect: Ring = closeRing([

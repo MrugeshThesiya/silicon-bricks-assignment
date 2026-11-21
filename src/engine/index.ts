@@ -5,8 +5,12 @@ import {
 } from '../geo/poly'
 import { FLOOR_HEIGHT, MAX_LOW_FLOORS, ZONES, type ZoneId } from '../rules/zones'
 import {
-  SETBACK_HIGH, SIDE_SETBACK_LOW, lawMinOpenSpace, minRoadWidthHigh, regimeFor, roadSetbackLow, type Regime,
+  MAX_LENGTH_NARROW_ROAD, SETBACK_HIGH, SIDE_SETBACK_LOW, canalSetback, lawMinOpenSpace, minRoadWidthHigh, regimeFor,
+  roadSetbackLow, type Regime,
 } from '../rules/setbacks'
+
+/** What a plot edge borders when it is not a neighbour: another road, or a canal (A-13, A-14). */
+export type EdgeUse = { kind: 'road' | 'canal'; width: number }
 
 export type Input = {
   /** Outer ring of the drawn plot, [lon, lat]. */
@@ -18,6 +22,8 @@ export type Input = {
   roadWidth: number
   /** Plot is within 500 m of a mass-transit station (A-10). */
   nearStation: boolean
+  /** Other edges that border a road or a canal, by edge index. Edges not listed border a neighbour. */
+  extra?: Record<number, EdgeUse>
 }
 
 export type Edge = { a: XY; b: XY; length: number; n: XY }
@@ -27,7 +33,7 @@ export type Check = { id: string; rule: string; label: string; status: 'pass' | 
 export type Slice = { base: number; top: number; mp: MP; area: number }
 
 export type Design = {
-  id: 'low' | 'tower'
+  id: 'low' | 'tower' | 'podium'
   name: string
   blurb: string
   regime: Regime
@@ -46,6 +52,9 @@ export type Result = {
   plotArea: number
   edges: Edge[]
   roadEdge: number
+  /** What each edge borders; null is a neighbour. The edge facing the road is listed as a road. */
+  uses: (EdgeUse | null)[]
+  /** Height plane: from the widest road (R-21, R-22, A-08). */
   plane: Plane
   maxGFA: number
   /** Floor area we aim for: the FAR limit, lowered where the road or station rules would otherwise fail. */
@@ -78,10 +87,11 @@ function allowedAt(mp: MP, plane: Plane, top: number): MP {
 }
 
 /** `trimLast: false` skips shrinking the top floor to the exact target; the floor count and heights are the same. */
-export function stackFloors(footprint: MP, plane: Plane | null, floorH: number, maxFloors: number, targetGFA: number, trimLast = true): Floor[] {
+/** `startLevel` stacks on top of floors already placed below (so heights continue from there). */
+export function stackFloors(footprint: MP, plane: Plane | null, floorH: number, maxFloors: number, targetGFA: number, trimLast = true, startLevel = 0): Floor[] {
   const floors: Floor[] = []
   let gfa = 0
-  for (let k = 1; k <= maxFloors; k++) {
+  for (let k = startLevel + 1; k <= startLevel + maxFloors; k++) {
     const top = k * floorH
     let region = plane ? allowedAt(footprint, plane, top) : footprint
     let area = areaMP(region)
@@ -117,6 +127,10 @@ type Ctx = {
   plotRing: Ring
   edges: Edge[]
   roadEdge: number
+  /** Edges that border a road, with the road width. */
+  roads: { edge: number; width: number }[]
+  /** The road whose width sets the height plane. */
+  mainRoad: number
   plane: Plane
   zone: ZoneId
   nearStation: boolean
@@ -179,14 +193,33 @@ function evaluate(ctx: Ctx, floors: Floor[]): Check[] {
     detail: m.regime === 'high' ? 'High-rise or special large building: MR 33 and MR 55 apply' : 'Under 23 m: MR 55 applies',
   })
 
+  const narrow = ctx.roads.filter((r) => r.edge !== ctx.mainRoad)
+  if (narrow.length && floors.length) {
+    const pts = floors.flatMap((f) => f.mp.flatMap((p) => p[0]))
+    const longest = narrow.reduce((best, r) => {
+      const e = ctx.edges[r.edge]
+      const t: XY = [(e.b[0] - e.a[0]) / e.length, (e.b[1] - e.a[1]) / e.length]
+      const along = pts.map((q) => (q[0] - e.a[0]) * t[0] + (q[1] - e.a[1]) * t[1])
+      return Math.max(best, Math.max(...along) - Math.min(...along))
+    }, 0)
+    checks.push({
+      id: 'corner', rule: 'R-22', label: 'Length along the narrower road',
+      status: longest <= MAX_LENGTH_NARROW_ROAD + 0.01 ? 'pass' : 'fail',
+      detail: `Building is ${longest.toFixed(1)} m long along the narrower road (at most ${MAX_LENGTH_NARROW_ROAD} m); the height limit uses the wider road`,
+    })
+  }
+
   if (m.regime === 'high') {
-    const edge = ctx.edges[ctx.roadEdge]
     const needW = minRoadWidthHigh(m.gfa)
-    const okFront = edge.length >= 12 && ctx.plane.width >= needW
+    const good = ctx.roads.filter((r) => ctx.edges[r.edge].length >= 12 && r.width >= needW)
+    const shown = good[0] ?? ctx.roads.find((r) => r.edge === ctx.roadEdge)!
+    const edge = ctx.edges[shown.edge]
     checks.push({
       id: 'frontage', rule: needW === 18 ? 'R-31' : 'R-30', label: 'Road frontage',
-      status: okFront ? 'pass' : 'fail',
-      detail: `Road side ${edge.length.toFixed(1)} m (needs 12 m), road ${ctx.plane.width} m wide (needs ${needW} m)`,
+      status: good.length > 0 ? 'pass' : 'fail',
+      detail: good.length > 0
+        ? `Plot side ${edge.length.toFixed(1)} m (needs 12 m) on a road ${shown.width} m wide (needs ${needW} m)`
+        : `No plot side of 12 m or more on a road ${needW} m wide or more (road side ${edge.length.toFixed(1)} m, road ${shown.width} m)`,
     })
     checks.push({
       id: 'fire', rule: 'R-33', label: 'Fire lane',
@@ -203,6 +236,18 @@ function evaluate(ctx: Ctx, floors: Floor[]): Check[] {
       detail: ok ? 'Allowed: near a station or on a road 30 m wide or more' : 'Needs a station within 500 m or a road 30 m wide or more',
     })
   }
+
+  checks.push({
+    id: 'parking', rule: 'A-09, A-04', label: 'Parking (information)',
+    status: 'info',
+    detail: `About ${Math.ceil(m.gfa / 120)} spaces at 1 per 120 m² of floor area (figure not confirmed in the regulations). Parking floors count toward the floor area, and basements are not modelled.`,
+  })
+
+  checks.push({
+    id: 'bonus', rule: 'R-01, art. 50 to 57', label: 'FAR bonus (not modelled)',
+    status: 'info',
+    detail: `Up to 20 % more floor area (about ${fmt(0.2 * ctx.maxGFA)} m²) is possible through low-income housing, water retention or an energy-efficient building. The checks here use the base FAR.`,
+  })
 
   checks.push({
     id: 'planted', rule: 'R-01', label: 'Planted area',
@@ -271,6 +316,33 @@ function makeTower(ctx: Ctx): Design | null {
 /** The plot cannot be used as drawn (for example its edges cross). The message is shown to the user. */
 export class PlotError extends Error {}
 
+const PODIUM_FLOORS = 4
+
+/** A wide podium with a slimmer tower on top. The podium is kept inside the 6 m setback, because the whole building is a high-rise (A-07). */
+function makePodiumTower(ctx: Ctx): Design | null {
+  if (ctx.plane.width < 10) return null // R-30
+  const envArea = areaMP(ctx.envHigh)
+  if (envArea < 400) return null
+  let podiumArea = Math.min(envArea, ctx.plotArea * 0.55)
+  let towerArea = podiumArea * 0.6
+  let floors: Floor[] = []
+  for (let i = 0; i < 30; i++) {
+    const podiumFp = shrinkToArea(ctx.envHigh, podiumArea)
+    const podium = stackFloors(podiumFp, ctx.plane, ctx.floorH, PODIUM_FLOORS, ctx.usableGFA)
+    if (!podium.length) return null
+    const used = podium.reduce((s, f) => s + f.area, 0)
+    const towerFp = shrinkToArea(podiumFp, towerArea)
+    const tower = stackFloors(towerFp, ctx.plane, ctx.floorH, 60 - PODIUM_FLOORS, ctx.usableGFA - used, true, podium.length)
+    floors = [...podium, ...tower]
+    const m = measure(ctx, floors)
+    if (m.openSpace + 0.01 >= m.openRequired) break
+    podiumArea *= 0.93
+    towerArea *= 0.93
+  }
+  if (floors.length <= PODIUM_FLOORS) return null // no tower part: same as a low-rise
+  return finish(ctx, 'podium', 'Podium + tower', 'A wide four-storey podium with a tower on part of it. More of the floor area sits low, so the tower is shorter than in the slim tower design.', floors)
+}
+
 export function compute(input: Input, floorH = FLOOR_HEIGHT): Result | null {
   if (input.plot.length < 4) return null
   const ll = openRing(input.plot as Ring)
@@ -286,10 +358,20 @@ export function compute(input: Input, floorH = FLOOR_HEIGHT): Result | null {
   const edges = makeEdges(plotRing)
   const longest = edges.reduce((best, e, i) => (e.length > edges[best].length ? i : best), 0)
   const roadEdge = input.roadEdge !== null && input.roadEdge < edges.length ? input.roadEdge : longest
-  const plane: Plane = { a: edges[roadEdge].a, n: edges[roadEdge].n, width: input.roadWidth }
+
+  // What each edge borders. The edge facing the road is a road; the others are neighbours unless listed (A-13, A-14).
+  const uses: (EdgeUse | null)[] = edges.map((_, i) => {
+    if (i === roadEdge) return { kind: 'road', width: input.roadWidth }
+    const u = input.extra?.[i]
+    return u && Number.isFinite(u.width) && u.width > 0 ? u : null
+  })
+  const roads = uses.flatMap((u, i) => (u?.kind === 'road' ? [{ edge: i, width: u.width }] : []))
+  // The height plane comes from the widest road (R-21, R-22, A-08); on a tie the edge facing the road wins.
+  const mainRoad = roads.reduce((best, r) => (r.width > best.width ? r : best), roads.find((r) => r.edge === roadEdge)!).edge
+  const plane: Plane = { a: edges[mainRoad].a, n: edges[mainRoad].n, width: uses[mainRoad]!.width }
 
   const road = roadSetbackLow(input.roadWidth)
-  const lowD = edges.map((_, i) => (i === roadEdge ? road : SIDE_SETBACK_LOW))
+  const lowD = uses.map((u) => (!u ? SIDE_SETBACK_LOW : u.kind === 'road' ? roadSetbackLow(u.width) : canalSetback(u.width)))
   const highD = edges.map(() => SETBACK_HIGH)
   const cut = (ds: number[]) =>
     difference(plotMP, edges.flatMap((e, i) => (ds[i] > 0 ? [capsule(e.a, e.b, ds[i])] : [])))
@@ -302,7 +384,7 @@ export function compute(input: Input, floorH = FLOOR_HEIGHT): Result | null {
   // Aim for the most floor area the rules allow on this road (R-30, R-31, R-40).
   const notes: string[] = []
   let usableGFA = maxGFA
-  const W = input.roadWidth
+  const W = plane.width // widest road
   if (W < 10 && usableGFA >= 9999) {
     usableGFA = 9999
     notes.push('Road under 10 m wide: no high-rise or special large building (R-30), so floor area is kept under 10,000 m².')
@@ -316,11 +398,11 @@ export function compute(input: Input, floorH = FLOOR_HEIGHT): Result | null {
   }
 
   const ctx: Ctx = {
-    plotArea, plotRing, edges, roadEdge, plane, zone: input.zone, nearStation: input.nearStation,
+    plotArea, plotRing, edges, roadEdge, roads, mainRoad, plane, zone: input.zone, nearStation: input.nearStation,
     envLow, envHigh, maxGFA, usableGFA, floorH,
   }
 
-  const designs = [makeLowRise(ctx), makeTower(ctx)].filter((d): d is Design => d !== null)
+  const designs = [makeLowRise(ctx), makeTower(ctx), makePodiumTower(ctx)].filter((d): d is Design => d !== null)
 
   const fullStack = stackFloors(envHigh, plane, floorH, 60, usableGFA, false) // only the height is needed
   const topFull = fullStack.length ? fullStack[fullStack.length - 1].top : 0
@@ -328,7 +410,7 @@ export function compute(input: Input, floorH = FLOOR_HEIGHT): Result | null {
   const capHigh = Math.min(150, Math.max(topFull, topDesigns, 25.6))
 
   return {
-    frame, plotArea, edges, roadEdge, plane, maxGFA, usableGFA, notes,
+    frame, plotArea, edges, roadEdge, uses, plane, maxGFA, usableGFA, notes,
     osrMinAtMax: zone.osr * maxGFA,
     setbacks: { road, side: SIDE_SETBACK_LOW, high: SETBACK_HIGH },
     envLow, envHigh,
