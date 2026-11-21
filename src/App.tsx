@@ -1,10 +1,11 @@
-import { useDeferredValue, useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import * as maplibregl from 'maplibre-gl'
 import { TerraDraw, TerraDrawPolygonMode, TerraDrawSelectMode } from 'terra-draw'
 import { TerraDrawMapLibreGLAdapter } from 'terra-draw-maplibre-gl-adapter'
 import type { Polygon } from 'geojson'
 import { useApp } from './store'
-import { compute, type Check } from './engine'
+import type { Check, Input } from './engine'
+import { useCompute } from './useCompute'
 import { ZONES, type ZoneId } from './rules/zones'
 import { empty, floorsToFC, roadEdgeToFC, slicesToFC } from './mapData'
 
@@ -22,12 +23,12 @@ export default function App() {
   const drawRef = useRef<TerraDraw | null>(null)
   const ready = useRef(false)
   const s = useApp()
-  const plot = useDeferredValue(s.plot)
-
-  const result = useMemo(
-    () => (plot ? compute({ plot, zone: s.zone, roadEdge: s.roadEdge, roadWidth: s.roadWidth, nearStation: s.nearStation }) : null),
-    [plot, s.zone, s.roadEdge, s.roadWidth, s.nearStation],
+  const input = useMemo<Input | null>(
+    () => (s.plot ? { plot: s.plot, zone: s.zone, roadEdge: s.roadEdge, roadWidth: s.roadWidth, nearStation: s.nearStation } : null),
+    [s.plot, s.zone, s.roadEdge, s.roadWidth, s.nearStation],
   )
+  // The engine runs in a Web Worker, so drawing and dragging never wait for it.
+  const { result, busy, error } = useCompute(input)
   const design = result?.designs.find((d) => d.id === s.designId) ?? result?.designs[0] ?? null
 
   // Map and drawing, created once.
@@ -73,7 +74,10 @@ export default function App() {
         sync()
         draw.setMode('select')
       })
-      draw.on('change', sync)
+      // While a new polygon is being drawn, every mouse move fires 'change'. Wait for 'finish'; Terra Draw shows the outline itself.
+      draw.on('change', () => {
+        if (draw.getMode() === 'select') sync()
+      })
       useApp.getState().set({}) // trigger first data push
     })
     return () => {
@@ -83,16 +87,15 @@ export default function App() {
     }
   }, [])
 
-  // Push results to the map.
-  useEffect(() => {
+  // Push results to the map, one source at a time so a toggle only touches its own layer.
+  const put = (id: string, data: GeoJSON.FeatureCollection) => {
     const map = mapRef.current
-    if (!map || !ready.current) return
-    const put = (id: string, data: GeoJSON.FeatureCollection) => (map.getSource(id) as maplibregl.GeoJSONSource | undefined)?.setData(data)
-    put('env-low', result && s.showLow ? slicesToFC(result.slicesLow, result.frame) : empty)
-    put('env-high', result && s.showHigh ? slicesToFC(result.slicesHigh, result.frame) : empty)
-    put('design', result && design && s.showDesign ? floorsToFC(design.floors, result.frame) : empty)
-    put('road-edge', roadEdgeToFC(result))
-  }, [result, design, s.showLow, s.showHigh, s.showDesign])
+    if (map && ready.current) (map.getSource(id) as maplibregl.GeoJSONSource | undefined)?.setData(data)
+  }
+  useEffect(() => put('env-low', result && s.showLow ? slicesToFC(result.slicesLow, result.frame) : empty), [result, s.showLow])
+  useEffect(() => put('env-high', result && s.showHigh ? slicesToFC(result.slicesHigh, result.frame) : empty), [result, s.showHigh])
+  useEffect(() => put('design', result && design && s.showDesign ? floorsToFC(design.floors, result.frame) : empty), [result, design, s.showDesign])
+  useEffect(() => put('road-edge', roadEdgeToFC(result)), [result])
 
   const startDrawing = () => {
     drawRef.current?.clear()
@@ -149,7 +152,9 @@ export default function App() {
           Within 500 m of an MRT/BTS station
         </label>
 
-        {!result && <p className="hint">Click “Draw plot”, then click the corners on the map. Click the last corner again to finish.</p>}
+        {error && <p className="hint warn">{error}</p>}
+        {busy && <p className="hint">Working it out…</p>}
+        {!result && !error && !busy && <p className="hint">Click “Draw plot”, then click the corners on the map. Click the last corner again to finish.</p>}
 
         {result && (
           <>

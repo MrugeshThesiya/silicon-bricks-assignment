@@ -10,8 +10,8 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "clipper-lib": "^6.4.2",
     "maplibre-gl": "^6.19.0",
-    "polyclip-ts": "^0.16.8",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "terra-draw": "^1.40.0",

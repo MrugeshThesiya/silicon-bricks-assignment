@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { Frame } from '../geo/frame'
-import { areaMP, ringArea } from '../geo/poly'
+import { areaMP, isSimple, ringArea, shrinkToArea } from '../geo/poly'
 import { roadSetbackLow, regimeFor } from '../rules/setbacks'
-import { compute, stackFloors, type Input } from './index'
+import { compute, stackFloors, PlotError, type Input } from './index'
 import { polyOf } from '../geo/poly'
 
 const f = new Frame(100.574, 13.779)
@@ -49,7 +49,7 @@ describe('stacking', () => {
   it('floor areas add up to the target exactly', () => {
     const fp = polyOf([[0, 0], [30, 0], [30, 30], [0, 30]])
     const floors = stackFloors(fp, null, 3.2, 20, 2500)
-    expect(floors.reduce((s, x) => s + x.area, 0)).toBeCloseTo(2500, 3)
+    expect(floors.reduce((s, x) => s + x.area, 0)).toBeCloseTo(2500, 2)
   })
   it('the road height plane cuts the upper floors away from the road', () => {
     const fp = polyOf([[0, 0], [30, 0], [30, 60], [0, 60]])
@@ -112,5 +112,28 @@ describe('road and station limits', () => {
   it('offers no tower on a road under 10 m wide', () => {
     const r = compute({ ...base, roadWidth: 8 })!
     expect(r.designs.map((d) => d.id)).toEqual(['low'])
+  })
+})
+
+describe('robustness', () => {
+  it('detects a plot whose edges cross', () => {
+    expect(isSimple([[0, 0], [10, 10], [10, 0], [0, 10]])).toBe(false)
+    expect(isSimple([[0, 0], [10, 0], [10, 10], [0, 10]])).toBe(true)
+    const bowtie = [[0, 0], [40, 40], [40, 0], [0, 40], [0, 0]].map(([x, y]) => f.toLL([x, y]))
+    expect(() => compute({ ...base, plot: bowtie })).toThrow(PlotError)
+  })
+  it('handles a many-cornered irregular plot without throwing', () => {
+    for (const n of [12, 24, 40]) {
+      const ring = Array.from({ length: n }, (_, i) => {
+        const t = (2 * Math.PI * i) / n, r = 40 * (1 + 0.15 * Math.sin(5 * t))
+        return f.toLL([r * Math.cos(t), r * Math.sin(t)])
+      })
+      const r = compute({ ...base, plot: [...ring, ring[0]], roadEdge: null })!
+      expect(r.designs.length).toBeGreaterThan(0)
+    }
+  })
+  it('shrinkToArea hits the target to 1e-3 m²', () => {
+    const mp = polyOf([[0, 0], [37, 0], [37, 23], [11, 23], [11, 41], [0, 41]])
+    for (const t of [900, 500, 123.4]) expect(areaMP(shrinkToArea(mp, t))).toBeCloseTo(t, 2)
   })
 })

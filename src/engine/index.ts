@@ -1,6 +1,6 @@
 import { Frame, type XY } from '../geo/frame'
 import {
-  areaMP, capsule, clipHalfPlane, closeRing, difference, openRing, polyOf, shrinkToArea, toCCW,
+  areaMP, capsule, clipHalfPlane, closeRing, difference, isSimple, openRing, polyOf, shrinkToArea, toCCW,
   type MP, type Ring,
 } from '../geo/poly'
 import { FLOOR_HEIGHT, MAX_LOW_FLOORS, ZONES, type ZoneId } from '../rules/zones'
@@ -77,7 +77,8 @@ function allowedAt(mp: MP, plane: Plane, top: number): MP {
   return clipHalfPlane(mp, plane.a, plane.n, top / 2 - plane.width)
 }
 
-export function stackFloors(footprint: MP, plane: Plane | null, floorH: number, maxFloors: number, targetGFA: number): Floor[] {
+/** `trimLast: false` skips shrinking the top floor to the exact target; the floor count and heights are the same. */
+export function stackFloors(footprint: MP, plane: Plane | null, floorH: number, maxFloors: number, targetGFA: number, trimLast = true): Floor[] {
   const floors: Floor[] = []
   let gfa = 0
   for (let k = 1; k <= maxFloors; k++) {
@@ -87,7 +88,7 @@ export function stackFloors(footprint: MP, plane: Plane | null, floorH: number, 
     if (area < 1) break
     const remaining = targetGFA - gfa
     if (remaining < 20) break
-    if (area > remaining) {
+    if (trimLast && area > remaining) {
       region = shrinkToArea(region, remaining)
       area = areaMP(region)
     }
@@ -267,9 +268,13 @@ function makeTower(ctx: Ctx): Design | null {
   return finish(ctx, 'tower', 'Tower', 'Slim and tall on a small footprint, with 6 m clear on every side and more open space.', floors)
 }
 
+/** The plot cannot be used as drawn (for example its edges cross). The message is shown to the user. */
+export class PlotError extends Error {}
+
 export function compute(input: Input, floorH = FLOOR_HEIGHT): Result | null {
   if (input.plot.length < 4) return null
   const ll = openRing(input.plot as Ring)
+  if (!isSimple(ll)) throw new PlotError('The plot outline crosses itself. Move a corner so the edges do not cross.')
   const lon0 = ll.reduce((s, p) => s + p[0], 0) / ll.length
   const lat0 = ll.reduce((s, p) => s + p[1], 0) / ll.length
   const frame = new Frame(lon0, lat0)
@@ -317,7 +322,7 @@ export function compute(input: Input, floorH = FLOOR_HEIGHT): Result | null {
 
   const designs = [makeLowRise(ctx), makeTower(ctx)].filter((d): d is Design => d !== null)
 
-  const fullStack = stackFloors(envHigh, plane, floorH, 60, usableGFA)
+  const fullStack = stackFloors(envHigh, plane, floorH, 60, usableGFA, false) // only the height is needed
   const topFull = fullStack.length ? fullStack[fullStack.length - 1].top : 0
   const topDesigns = designs.reduce((m, d) => Math.max(m, d.height), 0)
   const capHigh = Math.min(150, Math.max(topFull, topDesigns, 25.6))

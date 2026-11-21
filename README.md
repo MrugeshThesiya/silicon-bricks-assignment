@@ -28,7 +28,7 @@ All open source, built as a static site (no backend), to be hosted on Cloudflare
 | Map and real site | MapLibre GL JS |
 | 3D envelope and designs | MapLibre fill-extrusion layers (stepped slices). Three.js is installed for a smooth sloped surface later. |
 | Drawing the plot | Terra Draw |
-| Geometry | polyclip-ts, own helpers in `src/geo/` |
+| Geometry | clipper-lib (Clipper 6: boolean ops and rounded insets), own helpers in `src/geo/` |
 | Tests | Vitest |
 
 ## Layout
@@ -40,6 +40,8 @@ src/mapData.ts          turns results into map layers
 src/geo/                local metre frame, polygon helpers (clip, shrink, area)
 src/rules/              zone limits and setback rules (rule IDs match docs/zoning-rules.md)
 src/engine/index.ts     envelope, height plane, floor stacking, designs, checklist
+src/engine/worker.ts      runs the engine off the main thread
+src/useCompute.ts       hook that talks to the worker (one request at a time, latest wins)
 src/engine/engine.test.ts
 docs/zoning-rules.md    rules, sources, assumptions
 ```
@@ -48,6 +50,7 @@ docs/zoning-rules.md    rules, sources, assumptions
 
 - **Map data:** © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), available under the [Open Database Licence (ODbL)](https://opendatacommons.org/licenses/odbl/1-0/).
 - **Basemap tiles and style:** [OpenFreeMap](https://openfreemap.org), built on OpenStreetMap data and [OpenMapTiles](https://openmaptiles.org).
+- **Geometry library:** [clipper-lib](https://github.com/junmer/clipper-lib) (JavaScript port of Angus Johnson's Clipper 6), Boost Software Licence.
 - The attribution is shown on the map at all times. Do not hide it.
 - Any data files baked into this repo are derived from OpenStreetMap, are under the ODbL, and must be listed with their source and extraction date in `data/README.md`.
 - Zoning rules come from Bangkok's Comprehensive Plan and the Building Control Act regulations. Each rule used in the tool must cite its source document.
