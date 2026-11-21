@@ -34,10 +34,28 @@ npm ci
 npm run build        # type check + production build into dist/
 ```
 
-Upload the **contents of `dist/`** with Cloudflare Pages "Direct Upload" (or connect the repo with build command `npm run build` and output folder `dist`).
-`dist/assets/maplibre-gl-worker.mjs` must be in the upload: without it the map never loads ("Worker failed to load" in the browser console).
-After deploying, open the live URL, wait for "Click “Draw plot”…" to appear in the panel, press **Example plot**, and check that the browser console shows no errors.
-There is no backend, no environment variable and no server-side routing to configure.
+Upload the **contents of `dist/`** with Cloudflare Pages "Direct Upload" (or connect the repo with build command `npm run build` and output folder `dist`). A zip of the same folder works too.
+
+The build includes:
+
+- `dist/assets/maplibre-gl-worker.mjs`: MapLibre's worker. It must be in the upload, otherwise the map never loads ("Worker failed to load" in the browser console).
+- `dist/_headers`: Cloudflare Pages cache and security headers (fingerprinted assets cached for a year, the entry page always revalidated). Cloudflare consumes this file; it is not a page.
+- `dist/data/buildings.geojson`: the baked OSM fallback (2 MB, ODbL; source and date in `dist/data/README.md`).
+
+There is no backend, no environment variable, no build secret and no server-side routing to configure. The live basemap comes from OpenFreeMap at run time; if that service is down the baked fallback keeps the demo usable (`?basemap=local` forces it).
+
+### Deployment checklist
+
+After deploying, open the live URL and check:
+
+1. The panel says "Loading the map…" and then "Click “Draw plot”…" (not the saved-copy warning).
+2. Press **Example plot**: the plot appears at Sukhumvit Road / Soi 95, with 2,000 m², FAR 5 and three concept designs.
+3. Switch **Building type** to Hotel and Shophouse rows; the numbers and checklist change.
+4. The browser console shows no errors and no failed requests.
+5. The map shows "© OpenStreetMap contributors" with a working link, plus OpenFreeMap / OpenMapTiles.
+6. Open `?basemap=local`: the saved buildings still load, to prove the 2 MB fallback file was uploaded.
+
+The production build can be checked locally with `npm run preview` (serves `dist/` on port 4173).
 
 ## Stack
 
