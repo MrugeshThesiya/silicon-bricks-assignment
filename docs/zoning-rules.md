@@ -168,6 +168,7 @@ First version: show the base limit, and list the bonus routes as "not modelled".
 
 - ✅ **No general FAR exemption for parking** in source A. The only parking exemption is extra public parking in public buildings near certain stations (article 54). So **parking floors count toward FAR** unless an exemption is found elsewhere.
 - ⚠️ Two secondary sources (a Bangkok Biznews article and a car-parking guide) say Bangkok requires **1 space per 120 m²** of floor area for residential buildings, attributing it to Ministerial Regulation No. 7 or a Bangkok bylaw. I did not find the text. Treat as informational (A-09).
+- ⚠️ Checked again on 2026-11-21 with a web search: [Thailand Construction](https://thailand-construction.com/bangkok-car-park-rules-under-scrutiny) and [The Nation](https://www.nationthailand.com/business/40068634) repeat the figure of **1 space per 120 m² of construction area** for a new Bangkok condominium, and a Japanese government report on Thai building rules lists **Ministerial Regulation No. 7 (1974)** as the one on parking structure. Still no regulation text, so the figure stays informational. The same sources say the condo industry association (RESAM) is asking for mandatory parking to be dropped near rail stations; we saw no sign this has been adopted, so we do not model it. A [Chulalongkorn study](https://so05.tci-thaijo.org/index.php/sarasatr/article/view/242164) finds Bangkok condos provide about 105 % of the minimum on average.
 
 ## 7. Assumptions
 
@@ -191,11 +192,12 @@ First version: show the base limit, and list the bonus routes as "not modelled".
 ## 8. Open questions
 
 - ❓ The sub-area code at the chosen district, checked on the official BMA zoning map. Official data service: not found. The BMA open-data listing points to a map service on a bangkok.go.th host, but we could not reach its catalogue, so the check is manual (the "Check ผังเมือง กทม." app or the BMA map).
-- ❓ Parking count and any FAR exemption for parking and basements. Look for the Bangkok building bylaw (B.E. 2544) and MR No. 7.
-- ❓ How the 500 m to a station is measured, and which stations count (article 54 lists some by name; article 12 says "mass-transit station").
+- ❓ Parking count and any FAR exemption for parking and basements. Partly answered: the 1 per 120 m² figure is confirmed by more secondary sources (section 6) but not by regulation text. Still to read: the Bangkok building bylaw (B.E. 2544) and MR No. 7 (B.E. 2517).
+- ✅ **How the 500 m to a station is measured:** from the **platform boundary** of the mass-transit station (แนวเขตชานชาลา), not from the entrance or the station centre. Source A, article 37 (read in the Royal Gazette text, 2026-11-21). The tool still takes a yes/no input (A-10) and does not measure; the user should measure to the platform edge.
+- ❓ Article 36 sets stricter tests for "a road of 30 m" (a plot side of at least 30 m on a road of at least 30 m that runs through to a road of at least 16 m, within 500 m). Its wording covers land uses along roads listed in the plan's annex, so whether it applies to the 10,000 m² housing rule (R-40) needs a closer read. Until then A-10 treats "a 30 m road" simply as a road with a 30 m right-of-way.
 - ❓ Whether the rooftop-structure paragraph added to MR 55 article 44 in 2020 changes how height is measured. The PDF text for it was damaged.
 - ❓ Amendments to MR 33, 55 and the plan after the dates of the copies we read.
-- ❓ Fire-lane details (R-33): does it need to be continuous and public, and can it overlap the open space?
+- ❓ Fire-lane details (R-33): does it need to be continuous and public, and can it overlap the open space? A web search found no text on this. A search summary also mentioned that the Cabinet approved a draft amendment to MR 33 on fire safety for high-rise buildings in 2023; we did not read it, so treat it as a lead to check.
 
 ## 9. For the write-up
 
