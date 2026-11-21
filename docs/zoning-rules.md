@@ -213,6 +213,7 @@ First version: show the base limit, and list the bonus routes as "not modelled".
 | A-12 | No local **building-line** or road-widening ordinance applies. | Unknown. C article 3 says to measure from such a line if one exists. | Road setbacks may be short. |
 | A-13 | A **canal** edge is a small waterway: 3 m setback if under 10 m wide, 6 m if 10 m or wider (R-15). A high-rise keeps its 6 m (R-34). The plot boundary is taken as the water's edge. A large water body (12 m) is not offered. Canals do not make a height plane. | R-15. R-20 to R-22 are about roads only. | A plot on a river or lake would be shown with too small a setback. |
 | A-14 | Extra **road** edges each get their own setback (R-11 to R-14) from their own width. For a corner plot the length of the building along each narrower road is checked against 60 m (R-22). R-21 (a plot between two roads, not a corner) is **not** modelled. | R-21, R-22. | A through-plot may get a different height limit from the authority. |
+| A-15 | The **example plot** (corner of Sukhumvit Road and Soi 95, beside BTS Bang Chak) uses estimated values: zone Y.7, Soi 95 12 m, Sukhumvit Road 36 m, station within 500 m. | The BMA parcel tool cannot be reached; values come from the official map and measured OSM gaps (`docs/area-ranking.md`). | Setbacks and the height plane move by a little; the zone sub-area could differ at the exact plot. The user confirms them on the parcel tool. |
 
 ## 8. Open questions
 

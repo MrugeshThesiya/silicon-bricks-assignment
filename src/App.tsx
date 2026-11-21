@@ -8,6 +8,7 @@ import type { Check, Input } from './engine'
 import { useCompute } from './useCompute'
 import { Credits } from './Credits'
 import { EdgeUses } from './EdgeUses'
+import { EXAMPLE } from './example'
 import { buildingIdsOnPlot, loadedBuildings, setHiddenBuildings } from './existingBuildings'
 import { ZONES, type ZoneId } from './rules/zones'
 import { edgesToFC, empty, floorsToFC, slicesToFC } from './mapData'
@@ -16,8 +17,8 @@ import { edgesToFC, empty, floorsToFC, slicesToFC } from './mapData'
 // "© OpenStreetMap contributors" attribution, shown by the control below.
 const STYLE = 'https://tiles.openfreemap.org/styles/liberty'
 // Demo area: Sukhumvit Road at BTS Bang Chak (Phra Khanong). Official 2013 plan map: orange Y.7-21; 95 % orange in a 500 m circle.
-// Chosen by the measured comparison in docs/area-ranking.md. The plot's own sub-area still needs the BMA parcel tool.
-const CENTER: [number, number] = [100.6063, 13.6982]
+// Chosen by the measured comparison in docs/area-ranking.md. The values of the example plot are estimates (src/example.ts).
+const CENTER: [number, number] = EXAMPLE.center
 
 const fmt = (n: number) => Math.round(n).toLocaleString('en-US')
 const ICON: Record<Check['status'], string> = { pass: '✓', fail: '✗', info: 'i' }
@@ -42,7 +43,7 @@ export default function App() {
 
   // Map and drawing, created once.
   useEffect(() => {
-    const map = new maplibregl.Map({ container: mapEl.current!, style: STYLE, center: CENTER, zoom: 16.3, pitch: 55, attributionControl: false })
+    const map = new maplibregl.Map({ container: mapEl.current!, style: STYLE, center: CENTER, zoom: 17, pitch: 55, attributionControl: false })
     mapRef.current = map
     if (import.meta.env.DEV) (window as unknown as { __map?: maplibregl.Map }).__map = map // handy for debugging
     map.addControl(new maplibregl.AttributionControl({ compact: false }), 'bottom-right')
@@ -162,6 +163,22 @@ export default function App() {
     drawRef.current?.setMode('polygon')
     setDrawing(true)
   }
+  const loadExample = () => {
+    const draw = drawRef.current, map = mapRef.current
+    if (!draw || !map || !ready.current) return
+    draw.clear()
+    const res = draw.addFeatures([{ type: 'Feature', geometry: { type: 'Polygon', coordinates: [EXAMPLE.plot] }, properties: { mode: 'polygon' } }])
+    if (!res[0]?.valid) console.warn('Example plot rejected by Terra Draw:', res[0])
+    draw.setMode('select')
+    if (res[0]?.id !== undefined) draw.selectFeature(res[0].id)
+    useApp.getState().set({
+      plot: EXAMPLE.plot, zone: EXAMPLE.zone, roadEdge: EXAMPLE.roadEdge, roadWidth: EXAMPLE.roadWidth,
+      extra: EXAMPLE.extra, nearStation: EXAMPLE.nearStation,
+    })
+    setRoadText(String(EXAMPLE.roadWidth))
+    setDrawing(false)
+    map.easeTo({ center: EXAMPLE.center, zoom: 17.2, pitch: 55, duration: 800 })
+  }
   const clear = () => {
     if (!ready.current) return
     drawRef.current?.clear()
@@ -181,6 +198,7 @@ export default function App() {
         <div className="row">
           <button className={drawing ? 'active' : ''} onClick={startDrawing} disabled={!mapReady}>Draw plot</button>
           <button onClick={clear} disabled={!mapReady || (!s.plot && !drawing)}>Clear</button>
+          <button onClick={loadExample} disabled={!mapReady} title={EXAMPLE.name}>Example plot</button>
         </div>
 
         <h2>Site</h2>
@@ -231,6 +249,9 @@ export default function App() {
         {!mapReady && <p className="hint">Loading the map…</p>}
         {mapReady && drawing && <p className="hint">Click the corners of the plot on the map. Click the last corner again to finish.</p>}
         {mapReady && !drawing && !result && !error && !busy && <p className="hint">Click “Draw plot”, then click the corners on the map. After that you can drag a corner or the whole plot to change it.</p>}
+        {result && !drawing && s.plot === EXAMPLE.plot && (
+          <p className="hint">Example: {EXAMPLE.name}. Zone, road widths and station distance are estimates (see Data &amp; credits).</p>
+        )}
         {result && !drawing && <p className="muted small">Drag a corner or the whole plot to reshape it. Everything updates as you drag.</p>}
 
         {result && (

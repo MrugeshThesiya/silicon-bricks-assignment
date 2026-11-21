@@ -51,3 +51,16 @@ Bang Chak is rank 2 on the main score, behind Suan Luang Rama IX, but it is the 
 - OSM coverage and tagging are patchy everywhere; "heights tagged" is low even in the best areas, so most surroundings are drawn at a default height.
 - Weights in the score are a judgement call. The top-five counts above show how much they matter.
 - "Condo-heavy" is not measured, only the high-rise share as a sign of it.
+
+## Example plot and its assumed values (final, all estimates)
+The BMA parcel tool cannot be reached from the build machine, so the example plot uses the best statistical estimates below, and every one is labelled as an estimate in the app and the code (`src/example.ts`).
+
+| Value | Assumed | How it was estimated |
+|---|---|---|
+| Zone | **Y.7** (map label Y.7-21) | Official 2013 map: 95 % of the zoned area in a 500 m circle around BTS Bang Chak is orange. The label was read by eye. |
+| Sukhumvit Road right-of-way | **36 m** | OSM building-to-building gap across the road (171 samples): 10th percentile 32 m, lower quartile 40 m, median 55 m. The two carriageway lines are 20.6 m apart. The ROW cannot be larger than the gap, so a value between the 10th percentile and lower quartile was taken. |
+| Sukhumvit Soi 95 right-of-way | **12 m** | Gap across the soi (33 samples): 10th percentile 9 m, lower quartile 12 m, median 13 m. Soi 91: 13 m. Soi 93 is wider (about 20 m). |
+| Within 500 m of a station | **yes** (about 175 to 230 m) | Distance from the plot's corners to the BTS Bang Chak station node. The legal measure is to the platform boundary (article 37). |
+| Plot | **50 m by 40 m = 2,000 m²**, empty | Hypothetical, at the corner of Sukhumvit Road and Soi 95; edge 1 faces the soi, edge 4 faces Sukhumvit Road (A-01). |
+
+Effect of the values: the soi gives a 1.2 m road setback (R-13), Sukhumvit Road 2 m (R-14); the 36 m road sets the height plane (R-21, R-22); the 10,000 m² limit is reached at FAR 5 and is allowed because a station is within 500 m (R-40). Sukhumvit Road being 32 m or 40 m instead of 36 m changes only the height plane.
