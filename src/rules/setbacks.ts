@@ -26,9 +26,14 @@ export const SIDE_SETBACK_LOW = 3
 /** High-rise or special large: 6 m from neighbours and from public roads (R-34). */
 export const SETBACK_HIGH = 6
 
-/** Open space required by the building law (not the zoning OSR). R-10 and R-36. */
-export function lawMinOpenSpace(regime: Regime, plotArea: number, largestFloor: number): number {
-  return regime === 'high' ? 0.3 * plotArea : 0.3 * largestFloor
+/**
+ * Open space required by the building law (not the zoning OSR). R-10, R-36, R-56.
+ * Housing (including mixed use with housing): 30 % of the largest floor under 23 m, 30 % of the plot above.
+ * Other uses (hotel, office, shops): 10 % of the same.
+ */
+export function lawMinOpenSpace(regime: Regime, plotArea: number, largestFloor: number, housing = true): number {
+  const share = housing ? 0.3 : 0.1
+  return regime === 'high' ? share * plotArea : share * largestFloor
 }
 
 /** Minimum frontage road right-of-way for a high-rise (R-30, R-31). */

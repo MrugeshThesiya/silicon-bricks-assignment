@@ -122,7 +122,7 @@ export function setResidualBuildings(map: MapLibreMap, features: HidingPlan['res
         'fill-extrusion-base': ['coalesce', ['get', 'b'], 0],
       },
     },
-    map.getLayer('env-low') ? 'env-low' : undefined,
+    map.getLayer('design') ? 'design' : undefined,
   )
 }
 

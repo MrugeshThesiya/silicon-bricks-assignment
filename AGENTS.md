@@ -72,6 +72,10 @@ OpenStreetMap data is licensed under the ODbL, so every place that shows or ship
 - Any exported file or screenshot meant to leave the app (for example GLB) should keep the credit.
 - Never hide or shrink the attribution to make the UI look cleaner.
 
+## Building types
+
+The app offers condominium, hotel, office, mixed use and shophouse / townhouse rows (`src/rules/uses.ts`, `src/engine/rows.ts`). Their limits are in `docs/zoning-rules.md` section 4b (R-50 to R-56, A-16 to A-21), read from the Thai text of articles 12 to 14 and 36 of the 2013 plan regulation and MR 55. Do not add a type or change a threshold without updating that section first.
+
 ## Rules reference
 
 All zoning and building rules, their sources and our assumptions are in `docs/zoning-rules.md`. Use its rule IDs (R-xx) and assumption IDs (A-xx) in code comments and tests. Do not add a rule to the code that isn't in that file, and update the file first when a rule changes.

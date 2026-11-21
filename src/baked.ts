@@ -17,7 +17,7 @@ export const LOCAL_STYLE: StyleSpecification = {
   layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#ece9e1' } }],
 }
 
-/** Add the baked buildings as 3D blocks under `before`. Resolves false if the file is missing or not valid GeoJSON. */
+/** Add the baked buildings as 3D blocks under `before` (the design layer, so buildings are drawn first). Resolves false if the file is missing or not valid GeoJSON. */
 export async function addBakedBuildings(map: MapLibreMap, before?: string): Promise<boolean> {
   try {
     if (map.getSource(BAKED_SOURCE)) return true

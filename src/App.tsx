@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
 import { TerraDraw, TerraDrawPolygonMode, TerraDrawSelectMode } from 'terra-draw'
 import { TerraDrawMapLibreGLAdapter } from 'terra-draw-maplibre-gl-adapter'
@@ -12,6 +12,7 @@ import { EXAMPLE } from './example'
 import { LOCAL_STYLE, addBakedBuildings } from './baked'
 import { loadedBuildings, planHiding, setHiddenBuildings, setResidualBuildings } from './existingBuildings'
 import { ZONES, type ZoneId } from './rules/zones'
+import { USES, type UseId } from './rules/uses'
 import { edgesToFC, empty, floorsToFC, slicesToFC } from './mapData'
 
 // Basemap: OpenFreeMap (OpenStreetMap data). Its style supplies the
@@ -35,8 +36,8 @@ export default function App() {
   // The road width box keeps its own text while you type, so you can clear it and retype; it commits once the value is valid.
   const [roadText, setRoadText] = useState(String(s.roadWidth))
   const input = useMemo<Input | null>(
-    () => (s.plot ? { plot: s.plot, zone: s.zone, roadEdge: s.roadEdge, roadWidth: s.roadWidth, nearStation: s.nearStation, extra: s.extra } : null),
-    [s.plot, s.zone, s.roadEdge, s.roadWidth, s.nearStation, s.extra],
+    () => (s.plot ? { plot: s.plot, zone: s.zone, roadEdge: s.roadEdge, roadWidth: s.roadWidth, nearStation: s.nearStation, extra: s.extra, use: s.use } : null),
+    [s.plot, s.zone, s.roadEdge, s.roadWidth, s.nearStation, s.extra, s.use],
   )
   // The engine runs in a Web Worker, so drawing and dragging never wait for it.
   const { result, busy, error } = useCompute(input)
@@ -70,8 +71,10 @@ export default function App() {
       const draw = new TerraDraw({
         adapter: new TerraDrawMapLibreGLAdapter({ map }),
         modes: [
-          new TerraDrawPolygonMode(),
+          // A light fill, so the extruded envelopes and designs underneath stay easy to see.
+          new TerraDrawPolygonMode({ styles: { fillColor: '#2563eb', fillOpacity: 0.08, outlineColor: '#2563eb', outlineWidth: 2 } }),
           new TerraDrawSelectMode({
+            styles: { selectedPolygonColor: '#2563eb', selectedPolygonFillOpacity: 0.08, selectedPolygonOutlineColor: '#2563eb', selectedPolygonOutlineWidth: 2 },
             flags: { polygon: { feature: { draggable: true, coordinates: { midpoints: true, draggable: true, deletable: true } } } },
           }),
         ],
@@ -123,7 +126,7 @@ export default function App() {
           } else if (sourceId === 'openmaptiles' && !tileOk && ++tileErrors >= 3) {
             // The style loaded but its tiles do not: keep the base map, put the baked buildings on top.
             setBasemap('baked')
-            if (loaded) void addBakedBuildings(map, 'env-low')
+            if (loaded) void addBakedBuildings(map, 'design')
             else wantBaked = true
           }
         })
@@ -144,9 +147,10 @@ export default function App() {
             paint: { 'fill-extrusion-color': color, 'fill-extrusion-opacity': opacity, 'fill-extrusion-height': ['get', 'h'], 'fill-extrusion-base': ['get', 'b'] },
           })
         }
+        // The design goes first: translucent layers share the depth buffer, so an envelope drawn first would hide the design inside it.
+        ext('design', '#10b981', 0.92)
         ext('env-low', '#f59e0b', 0.22)
         ext('env-high', '#2563eb', 0.2)
-        ext('design', '#10b981', 0.92)
         map.addSource('edges', { type: 'geojson', data: empty })
         map.addLayer({
           id: 'edges', source: 'edges', type: 'line',
@@ -164,7 +168,7 @@ export default function App() {
             paint: { 'text-color': '#111827', 'text-halo-color': '#fff', 'text-halo-width': 2 },
           })
         }
-        if (mode === 'local' || wantBaked) void addBakedBuildings(map, 'env-low')
+        if (mode === 'local' || wantBaked) void addBakedBuildings(map, 'design')
         ready.current = true
         hidden.current = ''
         draw.start()
@@ -295,8 +299,10 @@ export default function App() {
         </label>
         <label>
           Building type
-          <select value="condo" disabled>
-            <option value="condo">Condominium (residential)</option>
+          <select value={s.use} onChange={(e) => s.set({ use: e.target.value as UseId })}>
+            {Object.entries(USES).map(([id, u]) => (
+              <option key={id} value={id}>{u.label}</option>
+            ))}
           </select>
         </label>
         <label>
@@ -358,7 +364,7 @@ export default function App() {
             {result.notes.map((n) => (
               <p key={n} className="hint">{n}</p>
             ))}
-            {result.designs.length > 0 && result.designs.every((d) => d.id !== 'tower') && result.plane.width < 10 && (
+            {result.use !== 'rows' && result.designs.length > 0 && result.designs.every((d) => d.id === 'low') && result.plane.width < 10 && (
               <p className="hint">No tower: a building of 23 m or more needs a road at least 10 m wide (R-30).</p>
             )}
 
@@ -385,6 +391,9 @@ export default function App() {
                   <dt>Floors</dt><dd>{design.floors.length}</dd>
                   <dt>Height</dt><dd>{design.height.toFixed(1)} m</dd>
                   <dt>Total floor area</dt><dd>{fmt(design.gfa)} m²</dd>
+                  {design.stats.map((x) => (
+                    <Fragment key={x.label}><dt>{x.label}</dt><dd>{x.value}</dd></Fragment>
+                  ))}
                   <dt>Share of allowed floor area</dt><dd>{((design.gfa / result.maxGFA) * 100).toFixed(0)} %</dd>
                   <dt>Ground covered</dt><dd>{fmt(design.coverage)} m²</dd>
                   <dt>Open space</dt><dd>{fmt(design.openSpace)} m²</dd>

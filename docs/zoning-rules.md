@@ -175,6 +175,56 @@ At 7 floors the building is not a high-rise, so source B applies and the open sp
 5. Fit floors until the floor area reaches the FAR limit (4.1).
 6. Check open space (4.2) and report pass or fail.
 
+## 4b. Other building types (✅ read in the Thai text, 2026-11-21)
+
+The app offers five uses: condominium (section 4), hotel, office, mixed use (shops below, condominium above) and shophouse / townhouse rows. The limits below are the "prohibited unless" lists of source A, articles 12 (Y.5), 13 (Y.6) and 14 (Y.7), and MR 55 (source B). "Road" and "station" conditions are explained in R-54. Translations are mine.
+
+### Hotel (A, art. 12 (8), 13 (8), 14 (8))
+
+| ID | Zone | Up to 50 rooms | 51 to 80 rooms | Over 80 rooms |
+|---|---|---|---|---|
+| R-50 | Y.5, Y.6 | allowed | road ≥ 16 m **or** station within 500 m | road ≥ 30 m **or** station within 500 m |
+| R-50 | Y.7 | allowed | road ≥ 16 m **or** station within 500 m (any size above 50 rooms) | same |
+
+### Office (A, art. 12 (13), 13 (13), 14 (13)); size is the "operating area" (พื้นที่ประกอบการ)
+
+| ID | Zone | Allowed freely | Allowed with road ≥ 12 / 16 / 30 m **or** station | Prohibited |
+|---|---|---|---|---|
+| R-53 | Y.5 | up to 300 m² | 300 to 1,000 m²: road ≥ 12 m or station | over 1,000 m² (research-and-development offices have separate, larger allowances, not modelled) |
+| R-53 | Y.6 | up to 1,000 m² | 1,000 to 2,000 m²: road ≥ 16 m or station; 2,000 to 5,000 m²: road ≥ 30 m or station | over 5,000 m² |
+| R-53 | Y.7 | up to 1,000 m² | 1,000 to 10,000 m²: road ≥ 16 m or station | over 10,000 m² |
+
+### Commerce: shops, retail, "พาณิชยกรรม" (A, art. 12 (12), 13 (12), 14 (12)); size is the operating area
+
+| ID | Zone | Allowed freely | Allowed with a road or station | Prohibited |
+|---|---|---|---|---|
+| R-52 | Y.5 | up to 2,000 m² | 2,000 to 5,000 m²: road ≥ 16 m or station; 5,000 to 10,000 m²: road ≥ 30 m or station | over 10,000 m² |
+| R-52 | Y.6 | up to 5,000 m² | 5,000 to 10,000 m²: road ≥ 30 m or station | over 10,000 m² |
+| R-52 | Y.7 | up to 5,000 m² | 5,000 to 10,000 m²: road ≥ 16 m or station; over 10,000 m²: road ≥ 30 m or station | none |
+
+### Multi-unit housing and the "road" test
+
+| ID | Rule | Source |
+|---|---|---|
+| R-40 | (as in section 4) Multi-unit residential over 10,000 m² total floor area is prohibited unless road ≥ 30 m or station within 500 m. In Y.5 and Y.6 housing by the BMA, National Housing Authority or CODI for low-income people is also excepted. | A 12 (11), 13 (11), 14 (11) |
+| R-54 | A "road of at least X m" condition applies to a plot with a side of at least **12 m** on a public road of at least 10 m or 12 m, **16 m** on a road of at least 16 m, and **30 m** on a road of at least 30 m. The road must also continue to other public roads of stated widths within 200 m, 300 m or 500 m. The "station within 500 m" alternative has no such condition. The distance is measured to the platform boundary. | A art. 36 and 37 |
+
+### Open space by use (B art. 33, C art. 6)
+
+| ID | Rule | Source |
+|---|---|---|
+| R-56 | Under 23 m: housing and multi-unit housing need open space of at least 30 % of the largest floor. Row houses, shophouses, commercial buildings, offices, hotels and other non-housing buildings need at least **10 %** of the largest floor; if the building is also used for housing, 30 % applies. | B art. 33 |
+| R-36 | 23 m or more (or special large): housing 30 % of the plot, other uses 10 % of the plot, mixed use with housing 30 % (as in section 4). | C art. 6 |
+
+### Row houses, shophouses and townhouses (B art. 2, 3, 4, 33, 34)
+
+| ID | Rule | Source |
+|---|---|---|
+| R-55a | Each shophouse or row-house unit: at least **4 m** wide (centre of column to centre of column), depth at least 4 m and **at most 24 m**, ground floor of at least **30 m²** per unit (townhouse, used as a home: **24 m²**). If the depth exceeds 16 m, an open court of at least 10 % (townhouse: 20 %) of the ground floor is needed at 12 to 16 m depth. | B art. 2, 3 |
+| R-55b | At most **10 units** in one continuous row and at most **40 m** long (centre of first column to centre of last), whoever owns them. | B art. 4 |
+| R-55c | Open space at the **back** of at least **3 m**; if the front is not on a public road, **6 m** in front; between rows of 10 units or 40 m, a gap of at least **4 m** through the full depth; at least **2 m** from a neighbour's boundary. These strips may not be built on. | B art. 34 |
+| R-55d | Open space of at least 10 % of the largest floor, or 30 % if used for housing (R-56). | B art. 33 |
+
 ## 5. FAR bonus (✅ A, articles 50 to 57)
 
 The total bonus is capped at **20 %** of the base FAR (article 57).
@@ -214,6 +264,12 @@ First version: show the base limit, and list the bonus routes as "not modelled".
 | A-13 | A **canal** edge is a small waterway: 3 m setback if under 10 m wide, 6 m if 10 m or wider (R-15). A high-rise keeps its 6 m (R-34). The plot boundary is taken as the water's edge. A large water body (12 m) is not offered. Canals do not make a height plane. | R-15. R-20 to R-22 are about roads only. | A plot on a river or lake would be shown with too small a setback. |
 | A-14 | Extra **road** edges each get their own setback (R-11 to R-14) from their own width. For a corner plot the length of the building along each narrower road is checked against 60 m (R-22). R-21 (a plot between two roads, not a corner) is **not** modelled. | R-21, R-22. | A through-plot may get a different height limit from the authority. |
 | A-15 | The **example plot** (corner of Sukhumvit Road and Soi 95, beside BTS Bang Chak) uses estimated values: zone Y.7, Soi 95 12 m, Sukhumvit Road 36 m, station within 500 m. | The BMA parcel tool cannot be reached; values come from the official map and measured OSM gaps (`docs/area-ranking.md`). | Setbacks and the height plane move by a little; the zone sub-area could differ at the exact plot. The user confirms them on the parcel tool. |
+| A-16 | A **hotel room** takes **40 m²** of gross floor area (rooms, corridors, services). The room count is floor area ÷ 40. | Typical for Bangkok city hotels; the plan counts rooms, the app counts floor area. | Room count, and so the 50 / 80 room limits, shifts with the real room size. |
+| A-17 | The **operating area** (พื้นที่ประกอบการ) of an office or shop is taken as **100 %** of the floor area of that use. | The plan sets limits on operating area, which excludes parking and common areas. Using the whole floor area is the safe side. | Offices and shops may be allowed larger than the app shows. |
+| A-18 | A road test (R-54) is met if a plot **side** on a road of enough width is at least 12 / 16 / 30 m long. The continuing-road conditions are **not checked**. | Article 36 also asks for connecting roads of stated widths, which the app cannot see. | A site may pass here and fail on the connecting-road test. |
+| A-19 | Floor-to-floor height: **3.8 m** for offices, **3.2 m** for everything else (A-03). | Typical. | Floor counts and the 23 m switch move. |
+| A-20 | **Mixed use**: shops fill the lowest floors (3 floors in the podium design, 2 in the low-rise design); housing is above. The shop floor area is the operating area (A-17). | A common Bangkok pattern. | The shop share differs per project. |
+| A-21 | **Row houses**: one band of units along the road edge, units 5 m wide and 16 m deep (no court needed), in rows of up to 10 units, 4 m gaps between rows, 4 floors, used as shops below and homes above (so 30 % open space applies). | A typical shophouse block. | Layout only; real blocks vary. |
 
 ## 8. Open questions
 
