@@ -72,4 +72,6 @@ docs/zoning-rules.md    rules, sources, assumptions
 
 ## Licence
 
-To be decided.
+The code is under the [MIT licence](LICENSE), © 2026 Mrugesh Thesiya.
+
+This covers the source code and the documentation. It does **not** cover data derived from OpenStreetMap: `docs/area-stats.csv` and any other baked data file are derived from OpenStreetMap, are under the [ODbL](https://opendatacommons.org/licenses/odbl/1-0/), and need the credit "© OpenStreetMap contributors". Third-party libraries keep their own licences (MapLibre GL JS BSD-3-Clause, clipper-lib Boost, React, Terra Draw and Zustand MIT).
