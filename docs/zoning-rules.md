@@ -38,6 +38,29 @@ Orange is **medium-density residential**, in three land types, each with numbere
 | R-02 | **Y.6** | **4.5 : 1** | **6.5 %** |
 | R-03 | **Y.7** | **5 : 1** | **6 %** |
 
+### 2.3 Where orange actually is: check against the official map (read 2026-11-21)
+
+**Source.** The land-use annex map of the 2013 plan ("แผนผังกำหนดการใช้ประโยชน์ที่ดินตามที่ได้จำแนกประเภทท้ายกฎกระทรวง ... ผังเมืองรวมกรุงเทพมหานคร พ.ศ. ๒๕๕๖", A0 sheet, PDF dated 15 May 2013), published by the BMA City Planning Department at `cityplangis.bangkok.go.th/cpdPortal/wp-content/uploads/2019/08/02_cpd56.pdf`. The BMA site blocks automated access from the development machine, so the file was taken from the Internet Archive's copy of that URL (snapshot of 2022-07-22). The PDF is a raster image with no text layer. Zones and sub-area codes were read **by eye** from crops rendered at 200 dpi (crops kept locally in `notes/zone-map/`, not in the repository).
+
+**What the map shows** (labels are the sub-area codes printed on the map; Thai digits converted):
+
+| Place | What the map shows | Colour |
+|---|---|---|
+| Ratchadaphisek Road at MRT Huai Khwang, and west of it (Din Daeng) | Y.9-5, Y.9-6, Y.9-13, Y.9-14, Y.9-18 | **Brown** (high density), not orange |
+| Huai Khwang district, east of Ratchadaphisek (about 0.5 to 1 km from the road) | Y.6-16, Y.6-24, Y.6-23, Y.7-13, Y.7-15, Y.7-16, Y.5-18, Y.5-19 | **Orange** |
+| Chatuchak, around the Lat Phrao / Phahon Yothin five-way | Y.7-4 (south-east of the five-way), Y.7-3 (west), Y.7-1, Y.5-10 to Y.5-14 | **Orange** |
+| Lat Phrao Road, south-east from the five-way towards Wang Thonglang | Y.7-5, Y.7-7, Y.7-9, Y.7-10 (a strip along the road) | **Orange** (Y.7, the transit type) |
+| South of the five-way (Phahon Yothin towards Sutthisan) | Y.9-1, Y.9-2 | **Brown** |
+| Wang Thonglang north-east of Lat Phrao Road, Lat Phrao (Ladprao) district | Y.4-xx | **Yellow** (low density) |
+
+**Reading.** The corridor along **Lat Phrao Road between the Phahon Yothin five-way and Ratchadaphisek** is orange (mostly Y.7, with Y.5 beside it). **MRT Huai Khwang is on brown.** This agrees with the first research agent's secondary-source finding and contradicts the project's earlier assumption.
+
+**Limits of this check (⚠️).**
+- The codes were read visually from a raster. A digit can be misread (for example ๓ and ๗). Check the exact plot on the BMA parcel tool or the "Check ผังเมือง กทม." app.
+- Sub-area labels sit inside their areas and do not say where a boundary runs next to a particular soi. Boundaries near roads follow the plan's own lines; a soi at the edge of a zone can fall on either side.
+- The map is the 2013 plan. A 4th revision is in draft and may change zones (A-12 and section 1).
+- Brown Y.8 to Y.10 were not studied in this tool (article 15 to 17); the app models orange only.
+
 Definitions (✅ A, article 4):
 
 - **FAR** = floor area of all floors of all buildings ÷ area of the plot the buildings stand on.
@@ -175,7 +198,7 @@ First version: show the base limit, and list the bonus routes as "not modelled".
 | ID | Assumption | Why | Effect if wrong |
 |---|---|---|---|
 | A-01 | The plot is an **empty field**. Redevelopment comes later. | Agreed with the candidate. The brief doesn't say. | Existing buildings on the plot are ignored. |
-| A-02 | Zone is **Y.7** for the chosen district (Huai Khwang / Ratchada, on a soi within 500 m of an MRT station). Y.6 is the fallback. | Y.7 is the orange type meant for areas served by mass transit (article 7 (2) (ค)). **The exact sub-area is not verified.** | FAR and OSR change (R-01 to R-03). Check the plot on the official BMA zoning map before relying on it. |
+| A-02 | The demo plot is in orange **Y.7** (or Y.5/Y.6, set by the user). **Changed 2026-11-21:** the official map shows **brown Y.9, not orange, along Ratchadaphisek Road at MRT Huai Khwang**, so the earlier "Huai Khwang / Ratchada is Y.7" assumption is wrong (section 2.3). The best-supported orange area is **Lat Phrao Road between Phahon Yothin and Ratchadaphisek (Chatuchak / Lat Phrao)**, where the map shows Y.7-3 to Y.7-10. The sub-area **of the exact plot is still to be checked on the parcel tool**. | Read from the official land-use map of the plan (section 2.3). | FAR and OSR change (R-01 to R-03). A plot on a different sub-area needs a different zone selection in the app. |
 | A-03 | Floor-to-floor height is **3.2 m** for housing. | Typical for condos. | Floor counts and the 23 m switch move. |
 | A-04 | **All floors count toward FAR**, including parking and basements. | Source A has no general exemption. This is the conservative reading. | Designs may show less floor area than the authority would allow. |
 | A-05 | The road width the user enters is the **right-of-way width** (boundary to boundary). | R-30 and R-20 use boundaries. OpenStreetMap only has road centre lines. | Heights and setbacks are off. We need a visible input and a default. |

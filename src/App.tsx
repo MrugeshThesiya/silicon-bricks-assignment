@@ -15,7 +15,8 @@ import { edgesToFC, empty, floorsToFC, slicesToFC } from './mapData'
 // Basemap: OpenFreeMap (OpenStreetMap data). Its style supplies the
 // "© OpenStreetMap contributors" attribution, shown by the control below.
 const STYLE = 'https://tiles.openfreemap.org/styles/liberty'
-const CENTER: [number, number] = [100.5742, 13.779]
+// Between MRT Phahon Yothin and MRT Lat Phrao, on Lat Phrao Road: orange Y.7 on the 2013 plan map (docs/zoning-rules.md 2.3).
+const CENTER: [number, number] = [100.5675, 13.8095]
 
 const fmt = (n: number) => Math.round(n).toLocaleString('en-US')
 const ICON: Record<Check['status'], string> = { pass: '✓', fail: '✗', info: 'i' }
@@ -40,7 +41,7 @@ export default function App() {
 
   // Map and drawing, created once.
   useEffect(() => {
-    const map = new maplibregl.Map({ container: mapEl.current!, style: STYLE, center: CENTER, zoom: 16.5, pitch: 55, attributionControl: false })
+    const map = new maplibregl.Map({ container: mapEl.current!, style: STYLE, center: CENTER, zoom: 16, pitch: 55, attributionControl: false })
     mapRef.current = map
     if (import.meta.env.DEV) (window as unknown as { __map?: maplibregl.Map }).__map = map // handy for debugging
     map.addControl(new maplibregl.AttributionControl({ compact: false }), 'bottom-right')
