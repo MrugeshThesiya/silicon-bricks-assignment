@@ -116,7 +116,7 @@ These are things the prototype does not do, or does only partly. They are listed
 - **Map service.** The live basemap comes from OpenFreeMap. If it is down, a saved copy of the buildings around the Example plot (about 2 km) is shown, and other places show no buildings.
 - **Devices.** Checked in headless Chrome at desktop and phone width, but not on a real phone and not reviewed by a second person.
 - **Not offered.** No export (for example GLB or PDF), no saving or sharing of a plot, no comparison of plots.
-- **CI.** A GitHub Actions workflow is prepared in `ci/` but not enabled, because the token used to push cannot create workflows.
+- **CI.** A GitHub Actions workflow (`.github/workflows/ci.yml`) runs the tests and the production build on every push and pull request. It does not deploy: deployment is manual.
 
 ## Licence
 
