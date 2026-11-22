@@ -50,6 +50,7 @@ The current session's file is:
 - The access key is returned once. Store it in `./.assignment-key` (git-ignored, private). Never put it in code, in a public repo, or in the submission doc.
 - The write-up and every submission value (name, phone, links) must come from the candidate. Do not guess or invent any of them.
 - Candidate: Mrugesh Thesiya
+- **Assignment email:** the clock was started with a different address from the Claude account email, so a call with the account email fails with "No assignment has been started". Use the address written in the git-ignored `./TASKS.md` for every MCP call and the submission. It is not written here because this repo is public.
 - **Calling the MCP server:** use `curl`, not Python `urllib` or similar (the server answers those with 403 Forbidden). POST JSON-RPC to `https://siliconbricks.co/hiring/mcp` with `Content-Type: application/json` and `Accept: application/json, text/event-stream` (a GET returns 405). Read the key from `./.assignment-key`, send the request body on stdin (`curl ... -d @-`) so the key isn't in the process arguments, and never print the key or the email in output. `time_left` and `check_submission` are read-only; `submit_application` is only called with values the candidate gave.
 
 ## Project decisions (agreed with the candidate)

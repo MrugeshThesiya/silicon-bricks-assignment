@@ -1,6 +1,6 @@
 import { Frame, type XY } from '../geo/frame'
 import {
-  areaMP, capsule, clipHalfPlane, closeRing, difference, isSimple, openRing, polyOf, shrinkToArea, toCCW,
+  areaMP, capsule, clipHalfPlane, closeRing, dedupeRing, difference, isSimple, openRing, polyOf, shrinkToArea, toCCW,
   type MP, type Ring,
 } from '../geo/poly'
 import { HIGH_RISE_HEIGHT, ZONES, type ZoneId } from '../rules/zones'
@@ -485,7 +485,8 @@ const COPY: Record<Exclude<UseId, 'rows'>, { low: Copy; tower?: Copy; podium: Co
 /** `floorHOverride` is for tests; normally the floor height comes from the building type (A-19). */
 export function compute(input: Input, floorHOverride?: number): Result | null {
   if (input.plot.length < 4) return null
-  const ll = openRing(input.plot as Ring)
+  const ll = dedupeRing(openRing(input.plot as Ring))
+  if (ll.length < 3) return null
   if (!isSimple(ll)) throw new PlotError('The plot outline crosses itself. Move a corner so the edges do not cross.')
   const lon0 = ll.reduce((s, p) => s + p[0], 0) / ll.length
   const lat0 = ll.reduce((s, p) => s + p[1], 0) / ll.length
@@ -571,6 +572,8 @@ export function compute(input: Input, floorHOverride?: number): Result | null {
         ? [makeLowRise(ctx, COPY.mixed.low, SHOP_FLOORS.low), makePodiumTower(ctx, COPY.mixed.podium, SHOP_FLOORS.podium)]
         : [makeLowRise(ctx, COPY[use].low), makeTower(ctx, COPY[use].tower!), makePodiumTower(ctx, COPY[use].podium)]
   ).filter((d): d is Design => d !== null)
+
+  if (designs.length === 0 && notes.length === 0) notes.push('No concept design fits the plot and applicable constraints.')
 
   const fullStack = stackFloors(envHigh, plane, floorH, 60, usableGFA, false) // only the height is needed
   const topFull = fullStack.length ? fullStack[fullStack.length - 1].top : 0

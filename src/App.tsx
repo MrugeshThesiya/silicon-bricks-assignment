@@ -7,6 +7,7 @@ import { useApp } from './store'
 import type { Check, Input } from './engine'
 import { useCompute } from './useCompute'
 import { Credits } from './Credits'
+import { Guide } from './Guide'
 import { EdgeUses } from './EdgeUses'
 import { EXAMPLE } from './example'
 import { LOCAL_STYLE, addBakedBuildings } from './baked'
@@ -22,6 +23,10 @@ const STYLE = 'https://tiles.openfreemap.org/styles/liberty'
 // Chosen by the measured comparison in docs/area-ranking.md. The values of the example plot are estimates (src/example.ts).
 const CENTER: [number, number] = EXAMPLE.center
 
+// MapLibre stops tilting at 60 degrees by default, which keeps you looking down on the buildings. A higher limit lets you look from street level;
+// MapLibre calls anything above 60 degrees experimental, so the extrusions were checked at this angle (see TASKS.md).
+const MAX_PITCH = 80
+
 const fmt = (n: number) => Math.round(n).toLocaleString('en-US')
 const ICON: Record<Check['status'], string> = { pass: '✓', fail: '✗', info: 'i' }
 
@@ -32,6 +37,7 @@ export default function App() {
   const ready = useRef(false)
   const [mapReady, setMapReady] = useState(false)
   const [drawing, setDrawing] = useState(false)
+  const [showGuide, setShowGuide] = useState(false)
   const s = useApp()
   // The road width box keeps its own text while you type, so you can clear it and retype; it commits once the value is valid.
   const [roadText, setRoadText] = useState(String(s.roadWidth))
@@ -62,7 +68,7 @@ export default function App() {
       let wantBaked = false
       let timer: number | undefined
       const style = mode === 'local' ? LOCAL_STYLE : test === 'broken' ? STYLE.replace('liberty', 'no-such-style') : STYLE
-      const map = new maplibregl.Map({ container: mapEl.current!, style, center: CENTER, zoom: 17, pitch: 55, attributionControl: false })
+      const map = new maplibregl.Map({ container: mapEl.current!, style, center: CENTER, zoom: 17, pitch: 55, maxPitch: MAX_PITCH, maxZoom: 21, attributionControl: false })
       mapRef.current = map
       if (import.meta.env.DEV) (window as unknown as { __map?: maplibregl.Map }).__map = map // handy for debugging
       map.addControl(new maplibregl.AttributionControl({ compact: false }), 'bottom-right')
@@ -274,12 +280,50 @@ export default function App() {
     setDrawing(false)
   }
 
+  // Camera views. They turn around the plot if there is one, otherwise around the point in the middle of the screen.
+  const orbitRaf = useRef(0)
+  const [orbiting, setOrbiting] = useState(false)
+  const stopOrbit = () => {
+    cancelAnimationFrame(orbitRaf.current)
+    setOrbiting(false)
+  }
+  useEffect(() => () => cancelAnimationFrame(orbitRaf.current), [])
+  const view = (v: 'top' | 'angle' | 'street') => {
+    const map = mapRef.current
+    if (!map || !ready.current) return
+    stopOrbit()
+    const c = s.plot ? (s.plot.reduce((a, p) => [a[0] + p[0], a[1] + p[1]], [0, 0]).map((x) => x / s.plot!.length) as [number, number]) : map.getCenter().toArray() as [number, number]
+    const to = v === 'top' ? { pitch: 0, bearing: 0, zoom: 17.5 } : v === 'angle' ? { pitch: 55, bearing: map.getBearing(), zoom: 17.2 } : { pitch: MAX_PITCH, bearing: map.getBearing(), zoom: 18.6 }
+    map.easeTo({ center: c, ...to, duration: 900 })
+  }
+  const orbit = () => {
+    const map = mapRef.current
+    if (!map || !ready.current) return
+    if (orbiting) return stopOrbit()
+    setOrbiting(true)
+    if (map.getPitch() < 40) map.easeTo({ pitch: 55, duration: 500 })
+    let last = performance.now()
+    const tick = (now: number) => {
+      map.setBearing(map.getBearing() + ((now - last) / 1000) * 12) // 12 degrees a second: a full turn in 30 s
+      last = now
+      orbitRaf.current = requestAnimationFrame(tick)
+    }
+    orbitRaf.current = requestAnimationFrame(tick)
+    // Any drag, scroll or touch on the map hands control back.
+    map.once('mousedown', stopOrbit)
+    map.once('touchstart', stopOrbit)
+    map.once('wheel', stopOrbit)
+  }
+
   const zone = ZONES[s.zone]
 
   return (
     <div className="layout">
       <aside className="panel">
-        <h1>Bangkok Plot Planner</h1>
+        <div className="title-row">
+          <h1>Bangkok Plot Planner</h1>
+          <button className="guide-btn" onClick={() => setShowGuide(true)} title="Step-by-step guide to using the app">Guide</button>
+        </div>
         <p className="muted">What can you build on a plot in an orange zone, and what could it look like?</p>
 
         <div className="row">
@@ -343,7 +387,8 @@ export default function App() {
         )}
         {!mapReady && <p className="hint">Loading the map…</p>}
         {mapReady && drawing && <p className="hint">Click the corners of the plot on the map. Click the last corner again to finish.</p>}
-        {mapReady && !drawing && !result && !error && !busy && <p className="hint">Click “Draw plot”, then click the corners on the map. After that you can drag a corner or the whole plot to change it.</p>}
+        {mapReady && !drawing && !result && !error && !busy && s.plot && <p className="hint warn">This plot is under 100 m², which is too small for this tool to work with. Drag a corner to make it bigger, or press “Clear” and draw a new one.</p>}
+        {mapReady && !drawing && !result && !error && !busy && !s.plot && <p className="hint">Click “Draw plot”, then click the corners on the map. After that you can drag a corner or the whole plot to change it.</p>}
         {result && !drawing && s.plot === EXAMPLE.plot && (
           <p className="hint">Example: {EXAMPLE.name}. Zone, road widths and station distance are estimates (see Data &amp; credits).</p>
         )}
@@ -416,7 +461,16 @@ export default function App() {
 
         <Credits />
       </aside>
-      <div id="map" ref={mapEl} />
+      {showGuide && <Guide onClose={() => setShowGuide(false)} />}
+      <div className="mapwrap">
+        <div id="map" ref={mapEl} />
+        <div className="views" role="group" aria-label="Camera view">
+          <button onClick={() => view('top')} disabled={!mapReady} title="Look straight down, north up">Top</button>
+          <button onClick={() => view('angle')} disabled={!mapReady} title="Tilted view from above">Angle</button>
+          <button onClick={() => view('street')} disabled={!mapReady} title="Low, near street level">Street</button>
+          <button className={orbiting ? 'active' : ''} onClick={orbit} disabled={!mapReady} title="Turn slowly around the plot. Click again or touch the map to stop.">Orbit</button>
+        </div>
+      </div>
     </div>
   )
 }

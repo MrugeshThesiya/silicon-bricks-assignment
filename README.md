@@ -36,6 +36,8 @@ npm ci
 npm run build        # type check + production build into dist/
 ```
 
+**Deployment is manual.** Pushing to GitHub does not update the live site: after a push, build and upload `dist/` yourself. The live site may therefore be behind `main`.
+
 Upload the **contents of `dist/`** with Cloudflare Pages "Direct Upload" (or connect the repo with build command `npm run build` and output folder `dist`). A zip of the same folder works too.
 
 The build includes:
@@ -98,6 +100,23 @@ docs/zoning-rules.md    rules, sources, assumptions
 - The attribution is shown on the map at all times. Do not hide it.
 - Any data files baked into this repo are derived from OpenStreetMap, are under the ODbL, and must be listed with their source and extraction date in `data/README.md`.
 - Zoning rules come from Bangkok's Comprehensive Plan and the Building Control Act regulations. Each rule used in the tool must cite its source document.
+
+## Future scope (known limits, not built)
+
+These are things the prototype does not do, or does only partly. They are listed so nobody mistakes them for finished work.
+
+- **Check the example plot on the official parcel tool.** The zone sub-area (Y.7-21, read by eye from the 2013 map), the road widths and the station distance of the Example plot are estimates. The BMA parcel tool or the "Check ผังเมือง กทม." app should confirm them.
+- **One zone family.** Only the orange zone types in the zone list are supported, and you pick the zone yourself. The tool does not look the zone up from the official map, and other Bangkok zones are not covered.
+- **Open rule questions.** Some readings are assumptions (A-xx), for example the fire lane and the road-width tests. They are listed in `docs/zoning-rules.md`. FAR bonuses are not modelled, and parking is information only.
+- **Neighbour realism.** OpenStreetMap heights are mostly missing, so many neighbours are drawn at a default height, and building coverage is patchy. Better height data would make the surroundings more convincing.
+- **Camera.** The 3D view is MapLibre's camera, tilting up to 80° (MapLibre calls angles above 60° experimental). A free-orbit viewer built on Three.js was considered and left out: it would need its own copy of the surroundings and a second renderer.
+- **Redevelopment.** The plot is treated as an empty field. Existing buildings on it are hidden and count for nothing. Demolition rules, existing-structure rights and heritage limits are out of scope.
+- **Plot size.** Plots under 100 m² are refused with a message. A very large plot (about 15,000 m² and up) can take around 0.8 s to compute; this runs in a Web Worker, so the page stays responsive.
+- **Test coverage.** 154 automated tests pass, including a seeded fuzz of 200 random plots. But 37 of the 52 rule and assumption IDs are not named in any test (`docs/test-coverage.md`). Some are probably exercised without being named. The list is a pointer, not proof.
+- **Map service.** The live basemap comes from OpenFreeMap. If it is down, a saved copy of the buildings around the Example plot (about 2 km) is shown, and other places show no buildings.
+- **Devices.** Checked in headless Chrome at desktop and phone width, but not on a real phone and not reviewed by a second person.
+- **Not offered.** No export (for example GLB or PDF), no saving or sharing of a plot, no comparison of plots.
+- **CI.** A GitHub Actions workflow is prepared in `ci/` but not enabled, because the token used to push cannot create workflows.
 
 ## Licence
 

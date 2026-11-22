@@ -222,3 +222,40 @@ describe('envelope slices', () => {
     expect(Math.max(...r.slicesLow.map((s) => s.top))).toBeLessThan(23)
   })
 })
+
+describe('winding and vertex-start invariance (A-05)', () => {
+  const shapes = [
+    { name: 'rectangle', xy: [[0, 0], [40, 0], [40, 50], [0, 50]] },
+    { name: 'L shape', xy: [[0, 0], [40, 0], [40, 20], [20, 20], [20, 50], [0, 50]] },
+    { name: 'triangle', xy: [[0, 0], [50, 0], [20, 40]] },
+  ]
+  for (const shape of shapes) it(`${shape.name} agrees across winding and first vertex`, () => {
+    const variants = [shape.xy, [...shape.xy].reverse(), [...shape.xy.slice(1), shape.xy[0]]]
+      .map((xy) => [...xy, xy[0]].map(([x, y]) => f.toLL([x, y])))
+    const results = variants.map((plot) => compute({ ...base, plot, roadEdge: null })!)
+    const keys = (r: NonNullable<ReturnType<typeof compute>>) => [
+      r.plotArea, r.maxGFA, r.setbacks.road, r.setbacks.side, r.edges.length,
+      areaMP(r.envLow), ...r.designs.map((d) => d.gfa),
+    ]
+    const expected = keys(results[0])
+    for (const r of results.slice(1)) keys(r).forEach((v, i) => expect(Math.abs(v - expected[i])).toBeLessThanOrEqual(Math.max(0.01, Math.abs(expected[i]) * 1e-6)))
+  })
+})
+
+describe('small and narrow plots across uses (R-01..R-56)', () => {
+  const uses = ['condo', 'hotel', 'office', 'mixed', 'rows'] as const
+  const sizes = [[6, 6], [8, 8], [10, 10], [20, 20], [6, 40], [12, 40]]
+  for (const [w, h] of sizes) for (const use of uses) it(`${w}x${h} ${use} returns finite, bounded designs`, () => {
+    const plot = [[0, 0], [w, 0], [w, h], [0, h], [0, 0]].map(([x, y]) => f.toLL([x, y]))
+    const result = compute({ ...base, plot, roadWidth: 12, use })
+    const scan = (v: unknown): boolean => typeof v === 'number' ? Number.isFinite(v) : Array.isArray(v) ? v.every(scan) : v && typeof v === 'object' ? Object.values(v).every(scan) : true
+    expect(scan(result)).toBe(true)
+    if (!result) return // plots below the 100 m² validation minimum are safely rejected
+    for (const d of result.designs) {
+      expect(d.gfa).toBeLessThanOrEqual(result.maxGFA + 0.01)
+      expect(d.checks.every(c => ['pass', 'fail', 'info'].includes(c.status))).toBe(true)
+      expect(d.ok).toBe(d.checks.every(c => c.status !== 'fail'))
+    }
+    if (result.designs.length === 0) expect(result.notes.some(n => n.trim().length > 0)).toBe(true)
+  })
+})

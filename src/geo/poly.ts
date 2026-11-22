@@ -69,6 +69,13 @@ export const openRing = (r: Ring): Ring => {
   const f = r[0], l = r[r.length - 1]
   return r.length > 1 && f[0] === l[0] && f[1] === l[1] ? r.slice(0, -1) : r
 }
+/** Drop corners that repeat the one before them, and a last corner that repeats the first. A click twice on the same spot should not turn a good plot into an error. */
+export function dedupeRing(r: Ring): Ring {
+  const out: Ring = []
+  for (const p of r) if (!out.length || out[out.length - 1][0] !== p[0] || out[out.length - 1][1] !== p[1]) out.push(p)
+  while (out.length > 1 && out[0][0] === out[out.length - 1][0] && out[0][1] === out[out.length - 1][1]) out.pop()
+  return out
+}
 export const toCCW = (r: Ring): Ring => (ringArea(r) < 0 ? [...r].reverse() : r)
 const toCW = (r: Ring): Ring => (ringArea(r) > 0 ? [...r].reverse() : r)
 
